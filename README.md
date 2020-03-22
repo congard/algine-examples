@@ -8,7 +8,7 @@ Examples of using [Algine](https://github.com/congard/algine) - Open Source Open
 ## Repository structure
 Examples are implemented in C++. The directory structure looks like:
 ```
-examples    source code and resources of examples
+src         source code and resources of examples
 lib         libraries which necessary for build
 pictures    some screenshots of examples
 ```

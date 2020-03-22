@@ -21,7 +21,7 @@ else()
     include_directories(lib/glfw/include)
 endif()
 
-add_executable(algine_examples examples/main.cpp)
+add_executable(algine_examples src/main.cpp)
 
 # TODO: add Windows support
 target_link_libraries(algine_examples algine assimp ${GLEW_LIBRARY} glfw GL pthread tulz)
