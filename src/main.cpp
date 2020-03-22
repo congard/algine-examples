@@ -65,7 +65,7 @@
 #define MODELS_COUNT 3
 
 #define algineResources "lib/algine/resources/"
-#define resources "examples/resources/"
+#define resources "src/resources/"
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
