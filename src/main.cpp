@@ -355,8 +355,8 @@ void initShaders() {
         manager.addIncludePath(Path::join(Path::getWorkingDirectory(), algineResources));
 
         // color shader
-        manager.fromFile(algineResources "shaders/vertex_shader.glsl",
-                         algineResources "shaders/fragment_shader.glsl");
+        manager.fromFile(algineResources "templates/ColorShader/vertex.glsl",
+                         algineResources "templates/ColorShader/fragment.glsl");
         manager.define(ColorShader::Settings::Lighting);
         manager.define(ColorShader::Settings::LightingAttenuation);
         manager.define(ColorShader::Settings::NormalMapping);
@@ -372,9 +372,9 @@ void initShaders() {
         colorShader->loadActiveLocations();
 
         // point shadow shader
-        manager.fromFile(algineResources "shaders/shadow/vertex_shadow_shader.glsl",
-                         algineResources "shaders/shadow/fragment_shadow_shader.glsl",
-                         algineResources "shaders/shadow/geometry_shadow_shader.glsl");
+        manager.fromFile(algineResources "shaders/Shadow.vert.glsl",
+                         algineResources "shaders/Shadow.frag.glsl",
+                         algineResources "shaders/Shadow.geom.glsl");
         manager.resetDefinitions();
         manager.define(BoneSystem::Settings::BoneSystem);
         manager.define(BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
@@ -393,19 +393,19 @@ void initShaders() {
         dirShadowShader->loadActiveLocations();
 
         // SSR shader
-        ssrShader->fromFile(algineResources "shaders/basic/quad_vertex.glsl",
-                            algineResources "shaders/ssr/fragment.glsl");
+        ssrShader->fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                            algineResources "shaders/SSR.frag.glsl");
         ssrShader->loadActiveLocations();
 
         // bloom search shader
-        bloomSearchShader->fromFile(algineResources "shaders/basic/quad_vertex.glsl",
-                                    algineResources "shaders/bloom/fragment_search.glsl");
+        bloomSearchShader->fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                                    algineResources "shaders/BloomSearch.frag.glsl");
         bloomSearchShader->loadActiveLocations();
 
         // TODO: remove "dof blur shaders", replace with only blur + blend steps
         // DOF blur shaders
-        manager.fromFile(algineResources "shaders/basic/quad_vertex.glsl",
-                         algineResources "shaders/dof/fragment.glsl");
+        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                         algineResources "shaders/DOFBlur.frag.glsl");
         manager.resetDefinitions();
         manager.define(DOFShaders::Settings::DofCocMap);
         manager.define(BlurShader::Settings::KernelRadius, std::to_string(dofBlurKernelRadius));
@@ -423,24 +423,24 @@ void initShaders() {
         dofBlurVertShader->loadActiveLocations();
 
         // DOF CoC shader
-        manager.fromFile(algineResources "shaders/basic/quad_vertex.glsl",
-                         algineResources "shaders/dof/coc_fragment.glsl");
+        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                         algineResources "shaders/DOFCOC.frag.glsl");
         manager.resetDefinitions();
         manager.define(DOFShaders::Settings::CinematicDof);
         dofCoCShader->fromSource(manager.makeGenerated());
         dofCoCShader->loadActiveLocations();
 
         // blend shader
-        manager.fromFile(algineResources "shaders/basic/quad_vertex.glsl",
-                         algineResources "shaders/blend/fragment.glsl");
+        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                         algineResources "templates/Blend.frag.glsl");
         manager.resetDefinitions();
         manager.define(BlendBloomModule::Settings::BloomAdd);
         blendShader->fromSource(manager.makeGenerated());
         blendShader->loadActiveLocations();
 
         // bloom blur shaders
-        manager.fromFile(algineResources "shaders/basic/quad_vertex.glsl",
-                         algineResources "shaders/blur/fragment.glsl");
+        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                         algineResources "shaders/Blur.frag.glsl");
         manager.resetDefinitions();
         manager.define(BlurShader::Settings::KernelRadius, std::to_string(bloomBlurKernelRadius));
         manager.define(BlurShader::Settings::OutputType, "vec3");
@@ -472,8 +472,8 @@ void initShaders() {
         cocBlurVertShader->loadActiveLocations();
 
         // cubemap shader
-        manager.fromFile(algineResources "shaders/basic/cubemap_vertex.glsl",
-                         algineResources "shaders/basic/cubemap_fragment.glsl");
+        manager.fromFile(algineResources "shaders/basic/Cubemap.vert.glsl",
+                         algineResources "shaders/basic/Cubemap.frag.glsl");
         manager.resetDefinitions();
         manager.define(CubemapShader::Settings::SpherePositions);
         manager.define(CubemapShader::Settings::ColorOut, "0"); // TODO: create constants
