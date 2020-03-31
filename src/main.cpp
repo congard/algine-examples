@@ -21,9 +21,11 @@
 #include <algine/framebuffer.h>
 #include <algine/light.h>
 #include <algine/constants/BoneSystem.h>
-#include <algine/constants/ColorShader.h>
 #include <algine/constants/ShadowShader.h>
 #include <algine/constants/CubemapShader.h>
+#include <algine/constants/Material.h>
+#include <algine/constants/Lighting.h>
+#include <algine/constants/NormalMapping.h>
 #include <algine/ext/constants/SSRShader.h>
 #include <algine/ext/constants/BlendBloomModule.h>
 #include <algine/ext/constants/DOFShaders.h>
@@ -38,6 +40,8 @@
 #include <algine/QuadRenderer.h>
 #include <algine/ext/Blur.h>
 #include <algine/ext/constants/BlurShader.h>
+
+#include "ColorShader.h"
 
 #define SHADOW_MAP_RESOLUTION 1024
 #define bloomK 0.5f
@@ -353,19 +357,21 @@ void initShaders() {
     {
         ShaderManager manager;
         manager.addIncludePath(Path::join(Path::getWorkingDirectory(), algineResources));
+        manager.addIncludePath(Path::join(Path::getWorkingDirectory(), resources "shaders"));
 
         // color shader
         manager.fromFile(algineResources "templates/ColorShader/vertex.glsl",
                          algineResources "templates/ColorShader/fragment.glsl");
+        manager.define(Module::Material::Settings::IncludeCustomProps);
+        manager.define(Module::Lighting::Settings::Attenuation);
+        manager.define(Module::Lighting::Settings::ShadowMappingPCF);
+        manager.define(Module::Lighting::Settings::PointLightsLimit, std::to_string(pointLightsLimit));
+        manager.define(Module::Lighting::Settings::DirLightsLimit, std::to_string(dirLightsLimit));
+        manager.define(Module::NormalMapping::Settings::FromMap);
         manager.define(ColorShader::Settings::Lighting);
-        manager.define(ColorShader::Settings::LightingAttenuation);
-        manager.define(ColorShader::Settings::NormalMapping);
-        manager.define(ColorShader::Settings::ShadowMappingPCF);
         manager.define(ColorShader::Settings::TextureMapping);
-        manager.define(BoneSystem::Settings::BoneSystem);
         manager.define(ColorShader::Settings::SSR);
-        manager.define(ColorShader::Settings::PointLightsLimit, std::to_string(pointLightsLimit));
-        manager.define(ColorShader::Settings::DirLightsLimit, std::to_string(dirLightsLimit));
+        manager.define(ColorShader::Settings::BoneSystem);
         manager.define(BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
         manager.define(BoneSystem::Settings::MaxBones, std::to_string(maxBones));
         colorShader->fromSource(manager.makeGenerated());
@@ -376,10 +382,10 @@ void initShaders() {
                          algineResources "shaders/Shadow.frag.glsl",
                          algineResources "shaders/Shadow.geom.glsl");
         manager.resetDefinitions();
-        manager.define(BoneSystem::Settings::BoneSystem);
         manager.define(BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
         manager.define(BoneSystem::Settings::MaxBones, std::to_string(maxBones));
         manager.define(ShadowShader::Settings::PointLightShadowMapping);
+        manager.define(ShadowShader::Settings::BoneSystem);
         pointShadowShader->fromSource(manager.makeGenerated());
         pointShadowShader->loadActiveLocations();
 
@@ -589,13 +595,13 @@ void initShaders() {
 
     // configuring CS
     colorShader->use();
-    colorShader->setInt(ColorShader::Vars::Material::AmbientTex, 0);
-    colorShader->setInt(ColorShader::Vars::Material::DiffuseTex, 1);
-    colorShader->setInt(ColorShader::Vars::Material::SpecularTex, 2);
-    colorShader->setInt(ColorShader::Vars::Material::NormalTex, 3);
-    colorShader->setInt(ColorShader::Vars::Material::ReflectionStrengthTex, 4);
-    colorShader->setInt(ColorShader::Vars::Material::JitterTex, 5);
-    colorShader->setFloat(ColorShader::Vars::ShadowOpacity, shadowOpacity);
+    colorShader->setInt(Module::Material::Vars::AmbientTex, 0);
+    colorShader->setInt(Module::Material::Vars::DiffuseTex, 1);
+    colorShader->setInt(Module::Material::Vars::SpecularTex, 2);
+    colorShader->setInt(Module::Material::Vars::NormalTex, 3);
+    colorShader->setInt(Module::Material::Vars::ReflectionStrengthTex, 4);
+    colorShader->setInt(Module::Material::Vars::JitterTex, 5);
+    colorShader->setFloat(Module::Lighting::Vars::ShadowOpacity, shadowOpacity);
 
     // configuring CubemapShader
     skyboxShader->use();
@@ -745,8 +751,8 @@ void initShadowMaps() {
 
 void initShadowCalculation() {
     colorShader->use();
-    colorShader->setFloat(ColorShader::Vars::ShadowDiskRadiusK, diskRadius_k);
-    colorShader->setFloat(ColorShader::Vars::ShadowDiskRadiusMin, diskRadius_min);
+    colorShader->setFloat(Module::Lighting::Vars::ShadowDiskRadiusK, diskRadius_k);
+    colorShader->setFloat(Module::Lighting::Vars::ShadowDiskRadiusMin, diskRadius_min);
     glUseProgram(0);
 }
 
@@ -856,10 +862,10 @@ void drawModel(const Model &model) {
         useNotNull(model.shape->meshes[i].material.reflectionTexture, 4);
         useNotNull(model.shape->meshes[i].material.jitterTexture, 5);
 
-        colorShader->setFloat(ColorShader::Vars::Material::AmbientStrength, model.shape->meshes[i].material.ambientStrength);
-        colorShader->setFloat(ColorShader::Vars::Material::DiffuseStrength, model.shape->meshes[i].material.diffuseStrength);
-        colorShader->setFloat(ColorShader::Vars::Material::SpecularStrength, model.shape->meshes[i].material.specularStrength);
-        colorShader->setFloat(ColorShader::Vars::Material::Shininess, model.shape->meshes[i].material.shininess);
+        colorShader->setFloat(Module::Material::Vars::AmbientStrength, model.shape->meshes[i].material.ambientStrength);
+        colorShader->setFloat(Module::Material::Vars::DiffuseStrength, model.shape->meshes[i].material.diffuseStrength);
+        colorShader->setFloat(Module::Material::Vars::SpecularStrength, model.shape->meshes[i].material.specularStrength);
+        colorShader->setFloat(Module::Material::Vars::Shininess, model.shape->meshes[i].material.shininess);
 
         glDrawElements(GL_TRIANGLES, model.shape->meshes[i].count, GL_UNSIGNED_INT, reinterpret_cast<void*>(model.shape->meshes[i].start * sizeof(uint)));
     }
