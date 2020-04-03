@@ -1,8 +1,5 @@
 /**
- * Algine: C++ OpenGL Engine
- *
- * My telegram: https://t.me/congard
- * My github: https://github.com/congard
+ * The scene with chess desk and 2 running humanoids
  * @author congard
  */
 
@@ -17,7 +14,6 @@
 #include <glm/glm.hpp>
 #include <tulz/Path>
 
-#include <algine/algine_renderer.h>
 #include <algine/framebuffer.h>
 #include <algine/light.h>
 #include <algine/constants/BoneSystem.h>
@@ -27,8 +23,9 @@
 #include <algine/constants/Lighting.h>
 #include <algine/constants/NormalMapping.h>
 #include <algine/ext/constants/SSRShader.h>
-#include <algine/ext/constants/BlendBloomModule.h>
-#include <algine/ext/constants/DOFShaders.h>
+#include <algine/ext/constants/BlendBloom.h>
+#include <algine/ext/constants/COCShader.h>
+#include <algine/ext/constants/BlendDOF.h>
 #include <algine/camera.h>
 #include <algine/renderbuffer.h>
 #include <algine/debug.h>
@@ -42,16 +39,17 @@
 #include <algine/ext/constants/BlurShader.h>
 
 #include "ColorShader.h"
+#include "BlendShader.h"
 
 #define SHADOW_MAP_RESOLUTION 1024
 #define bloomK 0.5f
 #define bloomBlurKernelRadius 15
 #define bloomBlurKernelSigma 16
-#define dofBlurAmount 4
-#define dofBlurKernelRadius 4
+#define dofK 0.5f
+#define dofBlurKernelRadius 2
 #define dofBlurKernelSigma 4
-#define cocBlurKernelRadius 4
-#define cocBlurKernelSigma 8
+#define cocBlurKernelRadius 2
+#define cocBlurKernelSigma 6
 
 #define FULLSCREEN !true
 
@@ -99,19 +97,17 @@ PointLamp pointLamps[pointLampsCount];
 DirLamp dirLamps[dirLampsCount];
 LightDataSetter lightDataSetter;
 
-// renderer
-AlgineRenderer renderer;
 shared_ptr<CubeRenderer> skyboxRenderer;
 shared_ptr<QuadRenderer> quadRenderer;
 
 shared_ptr<Blur> bloomBlur;
+shared_ptr<Blur> dofBlur;
 shared_ptr<Blur> cocBlur;
 
 Renderbuffer *rbo;
 Framebuffer *displayFb;
 Framebuffer *screenspaceFb;
 Framebuffer *bloomSearchFb;
-Framebuffer *pingpongFb[2];
 Framebuffer *cocFb;
 
 Texture2D *colorTex;
@@ -120,7 +116,6 @@ Texture2D *ssrValues;
 Texture2D *positionTex;
 Texture2D *screenspaceTex;
 Texture2D *bloomTex;
-Texture2D *pingpongDofTex[2];
 Texture2D *cocTex;
 TextureCube *skybox;
 
@@ -143,17 +138,13 @@ FPSCameraController camController;
 
 EulerRotator manHeadRotator;
 
-float blendExposure = 6.0f, blendGamma = 1.125f;
+constexpr float blendExposure = 6.0f, blendGamma = 1.125f;
 
-float
+constexpr float
     // DOF variables
     dofImageDistance = 1.0f,
     dofAperture = 10.0f,
-    dof_max_sigma = 6.0f,
-    dof_min_sigma = 0.0001f,
-    bleedingEliminationMinDeltaZ = 5.0f,
-    bleedingEliminationMinDeltaCoC = 1.0f,
-    bleedingEliminationMaxFocusCoC = 2.5f,
+    dofSigmaDivider = 1.5f,
 
     // diskRadius variables
     diskRadius_k = 1.0f / 25.0f,
@@ -178,11 +169,11 @@ void updateRenderTextures() {
 
     for (size_t i = 0; i < 2; ++i) {
         updateTexture(bloomBlur->getPingPongTextures()[i], winWidth * bloomK, winHeight * bloomK);
-        updateTexture(pingpongDofTex[i], winWidth, winHeight);
-        updateTexture(cocBlur->getPingPongTextures()[i], winWidth, winHeight);
+        updateTexture(cocBlur->getPingPongTextures()[i], winWidth * dofK, winHeight * dofK);
+        updateTexture(dofBlur->getPingPongTextures()[i], winWidth * dofK, winHeight * dofK);
     }
 
-    updateTexture(cocTex, winWidth, winHeight);
+    updateTexture(cocTex, winWidth * dofK, winHeight * dofK);
 }
 
 /**
@@ -408,31 +399,11 @@ void initShaders() {
                                     algineResources "shaders/BloomSearch.frag.glsl");
         bloomSearchShader->loadActiveLocations();
 
-        // TODO: remove "dof blur shaders", replace with only blur + blend steps
-        // DOF blur shaders
-        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                         algineResources "shaders/DOFBlur.frag.glsl");
-        manager.resetDefinitions();
-        manager.define(DOFShaders::Settings::DofCocMap);
-        manager.define(BlurShader::Settings::KernelRadius, std::to_string(dofBlurKernelRadius));
-        manager.define(DOFShaders::Settings::BleedingMinDeltaZ);
-        manager.define(DOFShaders::Settings::BleedingMinDeltaCoC);
-        manager.define(DOFShaders::Settings::BleedingMaxFocusCoC);
-        manager.define(BlurShader::Settings::Horizontal);
-        dofBlurHorShader->fromSource(manager.makeGenerated());
-        dofBlurHorShader->loadActiveLocations();
-
-        manager.resetGenerated();
-        manager.removeDefinition(BlurShader::Settings::Horizontal);
-        manager.define(BlurShader::Settings::Vertical);
-        dofBlurVertShader->fromSource(manager.makeGenerated());
-        dofBlurVertShader->loadActiveLocations();
-
         // DOF CoC shader
         manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                          algineResources "shaders/DOFCOC.frag.glsl");
         manager.resetDefinitions();
-        manager.define(DOFShaders::Settings::CinematicDof);
+        manager.define(COCShader::Settings::Cinematic);
         dofCoCShader->fromSource(manager.makeGenerated());
         dofCoCShader->loadActiveLocations();
 
@@ -440,7 +411,7 @@ void initShaders() {
         manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                          algineResources "templates/Blend.frag.glsl");
         manager.resetDefinitions();
-        manager.define(BlendBloomModule::Settings::BloomAdd);
+        manager.define(Module::BlendBloom::Settings::BloomAdd);
         blendShader->fromSource(manager.makeGenerated());
         blendShader->loadActiveLocations();
 
@@ -460,6 +431,23 @@ void initShaders() {
         manager.define(BlurShader::Settings::Vertical);
         bloomBlurVertShader->fromSource(manager.makeGenerated());
         bloomBlurVertShader->loadActiveLocations();
+
+        // dof blur shaders
+        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
+                         algineResources "shaders/Blur.frag.glsl");
+        manager.resetDefinitions();
+        manager.define(BlurShader::Settings::KernelRadius, std::to_string(dofBlurKernelRadius));
+        manager.define(BlurShader::Settings::OutputType, "vec3");
+        manager.define(BlurShader::Settings::TexComponent, "rgb");
+        manager.define(BlurShader::Settings::Horizontal);
+        dofBlurHorShader->fromSource(manager.makeGenerated());
+        dofBlurHorShader->loadActiveLocations();
+
+        manager.resetGenerated();
+        manager.removeDefinition(BlurShader::Settings::Horizontal);
+        manager.define(BlurShader::Settings::Vertical);
+        dofBlurVertShader->fromSource(manager.makeGenerated());
+        dofBlurVertShader->loadActiveLocations();
 
         // CoC blur shaders
         manager.resetGenerated();
@@ -491,26 +479,16 @@ void initShaders() {
 
     std::cout << "Compilation done\n";
 
-    #define value *
-
     lightDataSetter.indexDirLightLocations(colorShader, dirLightsLimit);
     lightDataSetter.indexPointLightLocations(colorShader, pointShadowShader, pointLightsLimit);
 
     skyboxRenderer = make_shared<CubeRenderer>(skyboxShader->getLocation(CubemapShader::Vars::InPos));
     quadRenderer = make_shared<QuadRenderer>(0); // inPosLocation in quad shader is 0
 
-    renderer.blendShader = blendShader;
-    renderer.dofBlurShaders[0] = dofBlurHorShader;
-    renderer.dofBlurShaders[1] = dofBlurVertShader;
-    renderer.dofCoCShader = dofCoCShader;
-    renderer.quadRenderer = quadRenderer.get();
-
-    Framebuffer::create(displayFb, screenspaceFb, bloomSearchFb, pingpongFb[0], pingpongFb[1], cocFb);
-
+    Framebuffer::create(displayFb, screenspaceFb, bloomSearchFb, cocFb);
     Renderbuffer::create(rbo);
 
-    Texture2D::create(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex,
-                      pingpongDofTex[0], pingpongDofTex[1], cocTex);
+    Texture2D::create(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
     ssrValues->setFormat(Texture::RG16F);
     cocTex->setFormat(Texture::Red16F);
 
@@ -527,8 +505,7 @@ void initShaders() {
     skybox->unbind();
 
     Texture2D::setParamsMultiple(Texture2D::defaultParams(),
-                                 colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex,
-                                 pingpongDofTex[0], pingpongDofTex[1], cocTex);
+            colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
 
     TextureCreateInfo createInfo;
     createInfo.format = Texture::RGB16F;
@@ -542,13 +519,20 @@ void initShaders() {
     bloomBlur->configureKernel(bloomBlurKernelRadius, bloomBlurKernelSigma);
 
     createInfo.format = Texture::Red16F;
-    createInfo.width = winWidth;
-    createInfo.height = winHeight;
+    createInfo.width = winWidth * dofK;
+    createInfo.height = winHeight * dofK;
 
     cocBlur = make_shared<Blur>(createInfo);
     cocBlur->setPingPongShaders(cocBlurHorShader, cocBlurVertShader);
     cocBlur->setQuadRenderer(quadRenderer.get());
     cocBlur->configureKernel(cocBlurKernelRadius, cocBlurKernelSigma);
+
+    createInfo.format = Texture::RGB16F;
+
+    dofBlur = make_shared<Blur>(createInfo);
+    dofBlur->setPingPongShaders(dofBlurHorShader, dofBlurVertShader);
+    dofBlur->setQuadRenderer(quadRenderer.get());
+    dofBlur->configureKernel(dofBlurKernelRadius, dofBlurKernelSigma);
 
     updateRenderTextures();
 
@@ -577,12 +561,6 @@ void initShaders() {
     displayFb->attachTexture(positionTex, Framebuffer::ColorAttachmentZero + 2);
     displayFb->attachTexture(ssrValues, Framebuffer::ColorAttachmentZero + 3);
 
-    for (size_t i = 0; i < 2; i++) {
-        // configuring ping-pong (blur)
-        pingpongFb[i]->bind();
-        pingpongFb[i]->attachTexture(pingpongDofTex[i], Framebuffer::ColorAttachmentZero);
-    }
-
     screenspaceFb->bind();
     screenspaceFb->attachTexture(screenspaceTex, Framebuffer::ColorAttachmentZero);
 
@@ -610,21 +588,13 @@ void initShaders() {
 
     // blend setting
     blendShader->use();
-    blendShader->setInt(BlendBloomModule::Vars::BaseImage, 0); // GL_TEXTURE0
-    blendShader->setInt(BlendBloomModule::Vars::BloomImage, 1); // GL_TEXTURE1
-    blendShader->setFloat(BlendBloomModule::Vars::Exposure, blendExposure);
-    blendShader->setFloat(BlendBloomModule::Vars::Gamma, blendGamma);
-
-    // dof blur setting
-    for (size_t i = 0; i < 2; i++) {
-        renderer.dofBlurShaders[i]->use();
-        renderer.dofBlurShaders[i]->setInt(DOFShaders::Vars::BaseImage, 0);
-        renderer.dofBlurShaders[i]->setInt(DOFShaders::Vars::CoCMap, 1);
-        renderer.dofBlurShaders[i]->setInt(DOFShaders::Vars::PositionMap, 2);
-        renderer.dofBlurShaders[i]->setFloat(DOFShaders::Vars::BleedingMinDeltaZ, bleedingEliminationMinDeltaZ);
-        renderer.dofBlurShaders[i]->setFloat(DOFShaders::Vars::BleedingMinDeltaCoC, bleedingEliminationMinDeltaCoC);
-        renderer.dofBlurShaders[i]->setFloat(DOFShaders::Vars::BleedingMaxFocusCoC, bleedingEliminationMaxFocusCoC);
-    }
+    blendShader->setInt(BlendShader::Vars::BaseImage, 0); // GL_TEXTURE0
+    blendShader->setInt(BlendShader::Vars::BloomImage, 1); // GL_TEXTURE1
+    blendShader->setInt(BlendShader::Vars::DofImage, 2); // GL_TEXTURE2
+    blendShader->setInt(Module::BlendDOF::Vars::COCMap, 3); // GL_TEXTURE3
+    blendShader->setFloat(Module::BlendDOF::Vars::DOFSigmaDivider, dofSigmaDivider);
+    blendShader->setFloat(BlendShader::Vars::Exposure, blendExposure);
+    blendShader->setFloat(BlendShader::Vars::Gamma, blendGamma);
 
     // screen space setting
     ssrShader->use();
@@ -761,12 +731,10 @@ void initShadowCalculation() {
  */
 void initDOF() {
     dofCoCShader->use();
-    //dofCoCShader->set(ALGINE_DOF_SIGMA_MAX, dof_max_sigma);
-    //dofCoCShader->set(ALGINE_DOF_SIGMA_MIN, dof_min_sigma);
-    dofCoCShader->setFloat(DOFShaders::Vars::Aperture, dofAperture);
-    dofCoCShader->setFloat(DOFShaders::Vars::ImageDistance, dofImageDistance);
-    dofCoCShader->setFloat(DOFShaders::Vars::PlaneInFocus, -1.0f);
-    glUseProgram(0);
+    dofCoCShader->setFloat(COCShader::Vars::Cinematic::Aperture, dofAperture);
+    dofCoCShader->setFloat(COCShader::Vars::Cinematic::ImageDistance, dofImageDistance);
+    dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, -1.0f);
+    dofCoCShader->reset();
 }
 
 /* init code end */
@@ -778,10 +746,9 @@ void recycleAll() {
     for (size_t i = 0; i < SHAPES_COUNT; i++)
         shapes[i]->recycle();
 
-    Framebuffer::destroy(displayFb, screenspaceFb, bloomSearchFb, pingpongFb[0], pingpongFb[1], cocFb);
+    Framebuffer::destroy(displayFb, screenspaceFb, bloomSearchFb, cocFb);
 
-    Texture2D::destroy(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex,
-                       pingpongDofTex[0], pingpongDofTex[1], cocTex);
+    Texture2D::destroy(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
     TextureCube::destroy(skybox);
 
     Renderbuffer::destroy(rbo);
@@ -796,6 +763,8 @@ void sendLampsData() {
     for (size_t i = 0; i < dirLampsCount; i++)
         lightDataSetter.setPos(dirLamps[i], i);
 }
+
+#define value *
 
 /* --- matrices --- */
 glm::mat4 getMVPMatrix() {
@@ -969,20 +938,24 @@ void render() {
     bloomBlur->makeBlur(bloomTex);
     glViewport(0, 0, winWidth, winHeight);
 
-    // TODO: tmp, AlgineRenderer must be eliminated !!!!!!
-    // Now it looks like shit code... Oh I know
-
-    renderer.dofCoCPass(cocFb->getId(), positionTex->getId());
+    glViewport(0, 0, winWidth * dofK, winHeight * dofK);
+    cocFb->bind();
+    dofCoCShader->use();
+    positionTex->use(0);
+    quadRenderer->draw();
 
     cocBlur->makeBlur(cocTex);
-
-    uint ids[] = {pingpongDofTex[0]->getId(), pingpongDofTex[1]->getId()};
-    uint fbos[] = {pingpongFb[0]->getId(), pingpongFb[1]->getId()};
-    renderer.dofBlurPass(fbos, ids, screenspaceTex->getId(), cocBlur->get()->getId(), positionTex->getId(), dofBlurAmount);
+    dofBlur->makeBlur(screenspaceTex);
+    glViewport(0, 0, winWidth, winHeight);
 
     bindFramebuffer(0);
     glClear(GL_DEPTH_BUFFER_BIT); // color will cleared by quad rendering
-    renderer.doubleBlendPass(pingpongDofTex[!renderer.horizontal]->getId(), bloomBlur->get()->getId());
+    blendShader->use();
+    screenspaceTex->use(0);
+    bloomBlur->get()->use(1);
+    dofBlur->get()->use(2);
+    cocBlur->get()->use(3);
+    quadRenderer->draw();
 }
 
 void display() {
@@ -1151,8 +1124,8 @@ void mouse_callback(MouseEventListener::MouseEvent *event) {
             std::cout << "x: " << pixels[0] << "; y: " << pixels[1] << "; z: " << pixels[2] << "\n";
         
             dofCoCShader->use();
-            dofCoCShader->setFloat(DOFShaders::Vars::PlaneInFocus, pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
-            glUseProgram(0);
+            dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
+            dofCoCShader->reset();
         
             delete[] pixels;
             break;
