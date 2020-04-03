@@ -21,7 +21,7 @@ else()
     include_directories(lib/glfw/include)
 endif()
 
-add_executable(algine_examples src/main.cpp src/ColorShader.h)
+add_executable(algine_examples src/main.cpp src/ColorShader.h src/BlendShader.h)
 
 target_link_libraries(algine_examples algine glfw pthread)
 
