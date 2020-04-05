@@ -691,32 +691,16 @@ void initLamps() {
     lamps[1].updateMatrix();
 }
 
-/**
- * Binds to depth cubemaps
- */
 void initShadowMaps() {
     colorShader->use();
-    // to avoid black screen on AMD GPUs and old Intel HD Graphics
-    // TODO: maybe move it to LightDataSetter?
-    // TODO: move it to LightDataSetter
-    for (int i = 0; i < pointLightsLimit; i++) {
-        ShaderProgram::setInt(lightDataSetter.getLocation(LightDataSetter::ShadowMap, Light::TypePointLight, i), POINT_LIGHT_TSID + i);
-		glActiveTexture(GL_TEXTURE0 + POINT_LIGHT_TSID + i);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    }
+
+    lightDataSetter.configureShadowMapping(dirLightsLimit, DIR_LIGHT_TSID, pointLightsLimit, POINT_LIGHT_TSID);
     for (usize i = 0; i < pointLampsCount; i++)
         lightDataSetter.setShadowMap(pointLamps[i], i, POINT_LIGHT_TSID + i);
-
-    // to avoid black screen on AMD GPUs and old Intel HD Graphics
-    // Note: Mesa drivers require int as sampler, not uint
-    for (int i = 0; i < dirLightsLimit; i++) {
-        ShaderProgram::setInt(lightDataSetter.getLocation(LightDataSetter::ShadowMap, Light::TypeDirLight, i), DIR_LIGHT_TSID + i);
-		glActiveTexture(GL_TEXTURE0 + DIR_LIGHT_TSID + i);
-		glBindTexture(GL_TEXTURE_2D, 0);
-    }
     for (usize i = 0; i < dirLampsCount; i++)
         lightDataSetter.setShadowMap(dirLamps[i], i, DIR_LIGHT_TSID + i);
-    glUseProgram(0);
+
+    colorShader->reset();
 }
 
 void initShadowCalculation() {
