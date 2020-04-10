@@ -16,6 +16,7 @@
 
 #include <algine/framebuffer.h>
 #include <algine/light.h>
+#include <algine/lighting/Manager.h>
 #include <algine/constants/BoneSystem.h>
 #include <algine/constants/ShadowShader.h>
 #include <algine/constants/CubemapShader.h>
@@ -41,30 +42,28 @@
 #include "ColorShader.h"
 #include "BlendShader.h"
 
-#define SHADOW_MAP_RESOLUTION 1024
-#define bloomK 0.5f
-#define bloomBlurKernelRadius 15
-#define bloomBlurKernelSigma 16
-#define dofK 0.5f
-#define dofBlurKernelRadius 2
-#define dofBlurKernelSigma 4
-#define cocBlurKernelRadius 2
-#define cocBlurKernelSigma 6
+using namespace algine;
+using namespace std;
+using namespace tulz;
 
-#define FULLSCREEN !true
+constexpr bool fullscreen = false;
+constexpr uint shadowMapResolution = 1024;
 
-#define pointLampsCount 1u
-#define dirLampsCount 1u
-#define pointLightsLimit 8u
-#define dirLightsLimit 8u
-#define maxBoneAttribsPerVertex 1u
-#define maxBones 64u
-// point light texture start id
-#define POINT_LIGHT_TSID 6
-// dir light texture start id
-#define DIR_LIGHT_TSID (int)(POINT_LIGHT_TSID + pointLightsLimit)
-#define SHAPES_COUNT 4
-#define MODELS_COUNT 3
+constexpr float bloomK = 0.5f;
+constexpr float dofK = 0.5f;
+constexpr uint bloomBlurKernelRadius = 15;
+constexpr uint bloomBlurKernelSigma = 16;
+constexpr uint dofBlurKernelRadius = 2;
+constexpr uint dofBlurKernelSigma = 4;
+constexpr uint cocBlurKernelRadius = 2;
+constexpr uint cocBlurKernelSigma = 6;
+
+constexpr uint pointLightsCount = 1;
+constexpr uint dirLightsCount = 1;
+constexpr uint maxBoneAttribsPerVertex = 1;
+constexpr uint maxBones = 64;
+constexpr uint shapesCount = 4;
+constexpr uint modelsCount = 3;
 
 #define algineResources "lib/algine/resources/"
 #define resources "src/resources/"
@@ -75,11 +74,6 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods);
 void mouse_callback(algine::MouseEventListener::MouseEvent *event);
 void cursor_pos_callback(GLFWwindow* window, double x, double y);
 
-// framebuffers, textures etc for rendering
-using namespace algine;
-using namespace std;
-using namespace tulz;
-
 // Window dimensions
 uint winWidth = 1366, winHeight = 763;
 GLFWwindow* window;
@@ -88,14 +82,14 @@ GLFWwindow* window;
 const glm::mat4 *modelMatrix; // model matrix stored in Model::transformation
 
 // models
-shared_ptr<Shape> shapes[SHAPES_COUNT];
-Model models[MODELS_COUNT], lamps[pointLampsCount + dirLampsCount];
+shared_ptr<Shape> shapes[shapesCount];
+Model models[modelsCount], lamps[pointLightsCount + dirLightsCount];
 Animator manAnimator, astroboyAnimator; // animator for man, astroboy models
 
 // light
-PointLamp pointLamps[pointLampsCount];
-DirLamp dirLamps[dirLampsCount];
-LightDataSetter lightDataSetter;
+PointLamp pointLamps[pointLightsCount];
+DirLamp dirLamps[dirLightsCount];
+Lighting::Manager lightManager;
 
 shared_ptr<CubeRenderer> skyboxRenderer;
 shared_ptr<QuadRenderer> quadRenderer;
@@ -207,15 +201,15 @@ void createPointLamp(PointLamp &result, const glm::vec3 &pos, const glm::vec3 &c
 
     result.perspectiveShadows();
     result.updateMatrix();
-    result.initShadows(SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION);
+    result.initShadows(shadowMapResolution, shadowMapResolution);
 
     colorShader->use();
-    lightDataSetter.setColor(result, id);
-    lightDataSetter.setKc(result, id);
-    lightDataSetter.setKl(result, id);
-    lightDataSetter.setKq(result, id);
-    lightDataSetter.setFarPlane(result, id);
-    lightDataSetter.setBias(result, id);
+    lightManager.transmitter.setColor(result, id);
+    lightManager.transmitter.setKc(result, id);
+    lightManager.transmitter.setKl(result, id);
+    lightManager.transmitter.setKq(result, id);
+    lightManager.transmitter.setFarPlane(result, id);
+    lightManager.transmitter.setBias(result, id);
     ShaderProgram::reset();
 }
 
@@ -236,16 +230,16 @@ void createDirLamp(DirLamp &result,
 
     result.orthoShadows(-10.0f, 10.0f, -10.0f, 10.0f);
     result.updateMatrix();
-    result.initShadows(SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION);
+    result.initShadows(shadowMapResolution, shadowMapResolution);
 
     colorShader->use();
-    lightDataSetter.setColor(result, id);
-    lightDataSetter.setKc(result, id);
-    lightDataSetter.setKl(result, id);
-    lightDataSetter.setKq(result, id);
-    lightDataSetter.setMinBias(result, id);
-    lightDataSetter.setMaxBias(result, id);
-    lightDataSetter.setLightMatrix(result, id);
+    lightManager.transmitter.setColor(result, id);
+    lightManager.transmitter.setKc(result, id);
+    lightManager.transmitter.setKl(result, id);
+    lightManager.transmitter.setKq(result, id);
+    lightManager.transmitter.setMinBias(result, id);
+    lightManager.transmitter.setMaxBias(result, id);
+    lightManager.transmitter.setLightMatrix(result, id);
     ShaderProgram::reset();
 }
 
@@ -305,9 +299,9 @@ void initGL() {
 #endif
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    window = FULLSCREEN ?
-        glfwCreateWindow(winWidth, winHeight, "Algine", glfwGetPrimaryMonitor(), nullptr) :
-        glfwCreateWindow(winWidth, winHeight, "Algine", nullptr, nullptr);
+    window = fullscreen ?
+             glfwCreateWindow(winWidth, winHeight, "Algine", glfwGetPrimaryMonitor(), nullptr) :
+             glfwCreateWindow(winWidth, winHeight, "Algine", nullptr, nullptr);
 
     glfwMakeContextCurrent(window);
 
@@ -343,6 +337,11 @@ void initShaders() {
                           bloomSearchShader, bloomBlurHorShader, bloomBlurVertShader,
                           cocBlurHorShader, cocBlurVertShader, blendShader);
 
+    lightManager.setDirLightsLimit(4);
+    lightManager.setPointLightsLimit(4);
+    lightManager.setPointLightsMapInitialSlot(6);
+    lightManager.setDirLightsMapInitialSlot(lightManager.pointLightsInitialSlot + lightManager.pointLightsLimit);
+
     std::cout << "Compiling algine shaders\n";
 
     {
@@ -356,8 +355,8 @@ void initShaders() {
         manager.define(Module::Material::Settings::IncludeCustomProps);
         manager.define(Module::Lighting::Settings::Attenuation);
         manager.define(Module::Lighting::Settings::ShadowMappingPCF);
-        manager.define(Module::Lighting::Settings::PointLightsLimit, std::to_string(pointLightsLimit));
-        manager.define(Module::Lighting::Settings::DirLightsLimit, std::to_string(dirLightsLimit));
+        manager.define(Module::Lighting::Settings::PointLightsLimit, std::to_string(lightManager.pointLightsLimit));
+        manager.define(Module::Lighting::Settings::DirLightsLimit, std::to_string(lightManager.dirLightsLimit));
         manager.define(Module::NormalMapping::Settings::FromMap);
         manager.define(ColorShader::Settings::Lighting);
         manager.define(ColorShader::Settings::TextureMapping);
@@ -479,8 +478,10 @@ void initShaders() {
 
     std::cout << "Compilation done\n";
 
-    lightDataSetter.indexDirLightLocations(colorShader, dirLightsLimit);
-    lightDataSetter.indexPointLightLocations(colorShader, pointShadowShader, pointLightsLimit);
+    lightManager.setLightShader(colorShader);
+    lightManager.setPointLightShadowShader(pointShadowShader);
+    lightManager.indexDirLightLocations();
+    lightManager.indexPointLightLocations();
 
     skyboxRenderer = make_shared<CubeRenderer>(skyboxShader->getLocation(CubemapShader::Vars::InPos));
     quadRenderer = make_shared<QuadRenderer>(0); // inPosLocation in quad shader is 0
@@ -694,11 +695,11 @@ void initLamps() {
 void initShadowMaps() {
     colorShader->use();
 
-    lightDataSetter.configureShadowMapping(dirLightsLimit, DIR_LIGHT_TSID, pointLightsLimit, POINT_LIGHT_TSID);
-    for (usize i = 0; i < pointLampsCount; i++)
-        lightDataSetter.setShadowMap(pointLamps[i], i, POINT_LIGHT_TSID + i);
-    for (usize i = 0; i < dirLampsCount; i++)
-        lightDataSetter.setShadowMap(dirLamps[i], i, DIR_LIGHT_TSID + i);
+    lightManager.configureShadowMapping();
+    for (usize i = 0; i < pointLightsCount; i++)
+        lightManager.transmitter.setShadowMap(pointLamps[i], i);
+    for (usize i = 0; i < dirLightsCount; i++)
+        lightManager.transmitter.setShadowMap(dirLamps[i], i);
 
     colorShader->reset();
 }
@@ -727,7 +728,7 @@ void initDOF() {
  * Cleans memory before exit
  */
 void recycleAll() {
-    for (size_t i = 0; i < SHAPES_COUNT; i++)
+    for (size_t i = 0; i < shapesCount; i++)
         shapes[i]->recycle();
 
     Framebuffer::destroy(displayFb, screenspaceFb, bloomSearchFb, cocFb);
@@ -739,13 +740,13 @@ void recycleAll() {
 }
 
 void sendLampsData() {
-    lightDataSetter.setPointLightsCount(pointLampsCount);
-    lightDataSetter.setDirLightsCount(dirLampsCount);
+    lightManager.transmitter.setPointLightsCount(pointLightsCount);
+    lightManager.transmitter.setDirLightsCount(dirLightsCount);
     colorShader->setVec3(ColorShader::Vars::CameraPos, camera.getPos());
-    for (size_t i = 0; i < pointLampsCount; i++)
-        lightDataSetter.setPos(pointLamps[i], i);
-    for (size_t i = 0; i < dirLampsCount; i++)
-        lightDataSetter.setPos(dirLamps[i], i);
+    for (size_t i = 0; i < pointLightsCount; i++)
+        lightManager.transmitter.setPos(pointLamps[i], i);
+    for (size_t i = 0; i < dirLightsCount; i++)
+        lightManager.transmitter.setPos(dirLamps[i], i);
 }
 
 #define value *
@@ -830,16 +831,16 @@ void drawModel(const Model &model) {
 void renderToDepthCubemap(const uint index) {
 	pointLamps[index].begin();
     pointLamps[index].updateMatrix();
-    lightDataSetter.setShadowShaderPos(pointLamps[index]);
-	lightDataSetter.setShadowShaderMatrices(pointLamps[index]);
+    lightManager.transmitter.setShadowShaderPos(pointLamps[index]);
+	lightManager.transmitter.setShadowShaderMatrices(pointLamps[index]);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// drawing models
-    for (size_t i = 0; i < MODELS_COUNT; i++)
+    for (size_t i = 0; i < modelsCount; i++)
         drawModelDM(models[i], pointShadowShader);
 
 	// drawing lamps
-	for (GLuint i = 0; i < pointLampsCount; i++) {
+	for (GLuint i = 0; i < pointLightsCount; i++) {
 		if (i == index) continue;
         drawModelDM(*pointLamps[i].mptr, pointShadowShader);
 	}
@@ -855,11 +856,11 @@ void renderToDepthMap(uint index) {
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// drawing models
-    for (size_t i = 0; i < MODELS_COUNT; i++)
+    for (size_t i = 0; i < modelsCount; i++)
         drawModelDM(models[i], dirShadowShader, dirLamps[index].m_lightSpace);
 
 	// drawing lamps
-	for (GLuint i = 0; i < dirLampsCount; i++) {
+	for (GLuint i = 0; i < dirLightsCount; i++) {
 		if (i == index) continue;
         drawModelDM(*dirLamps[i].mptr, dirShadowShader, dirLamps[index].m_lightSpace);
 	}
@@ -885,9 +886,9 @@ void render() {
 	sendLampsData();
 
     // drawing
-    for (size_t i = 0; i < MODELS_COUNT; i++)
+    for (size_t i = 0; i < modelsCount; i++)
         drawModel(models[i]);
-	for (size_t i = 0; i < pointLampsCount + dirLampsCount; i++)
+	for (size_t i = 0; i < pointLightsCount + dirLightsCount; i++)
 	    drawModel(lamps[i]);
 
     // render skybox
@@ -944,21 +945,21 @@ void render() {
 
 void display() {
     // animate
-    for (usize i = 0; i < MODELS_COUNT; i++)
+    for (usize i = 0; i < modelsCount; i++)
         if (models[i].shape->bonesPerVertex != 0)
             models[i].animator->animate(glfwGetTime());
 
     // shadow rendering
     // point lights
     pointShadowShader->use();
-	for (uint i = 0; i < pointLampsCount; i++) {
-	    lightDataSetter.setShadowShaderFarPlane(pointLamps[i]);
+	for (uint i = 0; i < pointLightsCount; i++) {
+	    lightManager.transmitter.setShadowShaderFarPlane(pointLamps[i]);
         renderToDepthCubemap(i);
     }
 
     // dir lights
     dirShadowShader->use();
-    for (uint i = 0; i < dirLampsCount; i++)
+    for (uint i = 0; i < dirLightsCount; i++)
         renderToDepthMap(i);
 	
     ssrShader->use();
@@ -1027,8 +1028,8 @@ int main() {
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-        GLfloat *pixels = getTexImage2D(dirLamps[0].shadowMap->id, SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION, GL_DEPTH_COMPONENT);
-        saveTexImage(pixels, SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION, 1, tulz::Path::getWorkingDirectory() + "/out/dir_depth.bmp", 3);
+        GLfloat *pixels = getTexImage2D(dirLamps[0].shadowMap->id, shadowMapResolution, shadowMapResolution, GL_DEPTH_COMPONENT);
+        saveTexImage(pixels, shadowMapResolution, shadowMapResolution, 1, tulz::Path::getWorkingDirectory() + "/out/dir_depth.bmp", 3);
         delete[] pixels;
         std::cout << "Depth map data saved\n";
     }
