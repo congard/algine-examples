@@ -791,11 +791,15 @@ void drawModelDM(const Model &model, ShaderProgram *program, const glm::mat4 &ma
 /**
  * Draws model
  */
-#define useNotNull(tex, slot) \
-if (tex != nullptr) \
-    tex->use(slot); \
-else \
-    texture2DAB(slot, 0);
+inline void useNotNull(Texture2D *const tex, const uint slot) {
+    if (tex != nullptr)
+        tex->use(slot);
+    else {
+        glActiveTexture(GL_TEXTURE0 + slot); // TODO: Engine::getDefaultTexture2D()
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+}
+
 void drawModel(const Model &model) {
     model.shape->inputLayouts[1]->bind();
     
@@ -809,12 +813,13 @@ void drawModel(const Model &model) {
     modelMatrix = &model.m_transform;
 	updateMatrices();
     for (size_t i = 0; i < model.shape->meshes.size(); i++) {
-        useNotNull(model.shape->meshes[i].material.ambientTexture, 0);
-        useNotNull(model.shape->meshes[i].material.diffuseTexture, 1);
-        useNotNull(model.shape->meshes[i].material.specularTexture, 2);
-        useNotNull(model.shape->meshes[i].material.normalTexture, 3);
-        useNotNull(model.shape->meshes[i].material.reflectionTexture, 4);
-        useNotNull(model.shape->meshes[i].material.jitterTexture, 5);
+        Material &material = model.shape->meshes[i].material;
+        useNotNull(material.ambientTexture.get(), 0);
+        useNotNull(material.diffuseTexture.get(), 1);
+        useNotNull(material.specularTexture.get(), 2);
+        useNotNull(material.normalTexture.get(), 3);
+        useNotNull(material.reflectionTexture.get(), 4);
+        useNotNull(material.jitterTexture.get(), 5);
 
         colorShader->setFloat(Module::Material::Vars::AmbientStrength, model.shape->meshes[i].material.ambientStrength);
         colorShader->setFloat(Module::Material::Vars::DiffuseStrength, model.shape->meshes[i].material.diffuseStrength);
@@ -933,7 +938,7 @@ void render() {
     dofBlur->makeBlur(screenspaceTex);
     glViewport(0, 0, winWidth, winHeight);
 
-    bindFramebuffer(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // TODO: should be like Engine::defaultFramebuffer->bind()
     glClear(GL_DEPTH_BUFFER_BIT); // color will cleared by quad rendering
     blendShader->use();
     screenspaceTex->use(0);
@@ -1028,9 +1033,20 @@ int main() {
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-        GLfloat *pixels = getTexImage2D(dirLamps[0].shadowMap->id, shadowMapResolution, shadowMapResolution, GL_DEPTH_COMPONENT);
-        saveTexImage(pixels, shadowMapResolution, shadowMapResolution, 1, tulz::Path::getWorkingDirectory() + "/out/dir_depth.bmp", 3);
-        delete[] pixels;
+        Framebuffer *const dFramebuffer = dirLamps[0].shadowMapFb;
+        dFramebuffer->bind();
+        const auto dPixelsData = dFramebuffer->getAllPixels2D(Framebuffer::DepthAttachment);
+        saveTexImage(dPixelsData.pixels.array(), dPixelsData.width, dPixelsData.height, 1,
+                Path::join(Path::getWorkingDirectory(), "dir_depth.bmp"), 3);
+        dFramebuffer->unbind();
+
+        Framebuffer *const pFramebuffer = pointLamps[0].shadowMapFb;
+        pFramebuffer->bind();
+        const auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Right, Framebuffer::DepthAttachment);
+        saveTexImage(pPixelsData.pixels.array(), pPixelsData.width, pPixelsData.height, 1,
+                Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), 3);
+        pFramebuffer->unbind();
+
         std::cout << "Depth map data saved\n";
     }
     else if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
@@ -1055,7 +1071,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
                 manHeadRotator.setYaw(manHeadRotator.getYaw() - glm::radians(5.0f));
             else if (key == GLFW_KEY_UP)
                 manHeadRotator.setPitch(manHeadRotator.getPitch() + glm::radians(5.0f));
-            else if (key == GLFW_KEY_DOWN)
+            else // GLFW_KEY_DOWN
                 manHeadRotator.setPitch(manHeadRotator.getPitch() - glm::radians(5.0f));
 
             manHeadRotator.rotate(r);
@@ -1099,20 +1115,22 @@ void mouse_callback(MouseEventListener::MouseEvent *event) {
             camera.updateMatrix();
             break;
         case MouseEventListener::ActionLongClick:
-            std::cout << "Long click " << event->button << "\n";
+            cout << "Long click " << event->button << "\n";
             break;
         case MouseEventListener::ActionClick:
-            std::cout << "x: " << event->getX() << "; y: " << event->getY() << "\n";
-        
-            GLfloat *pixels = getPixels(positionTex->getId(), (size_t)event->getX(), winHeight - (size_t)event->getY(), 1, 1, GL_RGB);
-        
-            std::cout << "x: " << pixels[0] << "; y: " << pixels[1] << "; z: " << pixels[2] << "\n";
+            uint x = static_cast<uint>(event->getX());
+            uint y = static_cast<uint>(event->getY());
+
+            displayFb->bind();
+            auto pixels = displayFb->getPixels2D(Framebuffer::ColorAttachmentZero + 2, x, winHeight - y, 1, 1).pixels;
+            displayFb->unbind();
+
+            cout << "Click: x: " << x << "; y: " << y << "\n";
+            cout << "Position map: x: " << pixels[0] << "; y: " << pixels[1] << "; z: " << pixels[2] << "\n";
         
             dofCoCShader->use();
             dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
             dofCoCShader->reset();
-        
-            delete[] pixels;
             break;
     }
 }
