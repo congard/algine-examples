@@ -15,7 +15,10 @@
 #include <tulz/Path>
 
 #include <algine/framebuffer.h>
-#include <algine/light.h>
+#include <algine/lighting/DirLight.h>
+#include <algine/lighting/PointLight.h>
+#include <algine/lighting/DirLamp.h>
+#include <algine/lighting/PointLamp.h>
 #include <algine/lighting/Manager.h>
 #include <algine/constants/BoneSystem.h>
 #include <algine/constants/ShadowShader.h>
@@ -34,6 +37,7 @@
 #include <algine/event.h>
 #include <algine/shader.h>
 #include <algine/texture.h>
+#include <algine/model.h>
 #include <algine/CubeRenderer.h>
 #include <algine/QuadRenderer.h>
 #include <algine/ext/Blur.h>
@@ -45,6 +49,9 @@
 using namespace algine;
 using namespace std;
 using namespace tulz;
+
+using Lighting::PointLamp;
+using Lighting::DirLamp;
 
 constexpr bool fullscreen = false;
 constexpr uint shadowMapResolution = 1024;
