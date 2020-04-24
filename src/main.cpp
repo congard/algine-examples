@@ -15,8 +15,6 @@
 #include <tulz/Path>
 
 #include <algine/framebuffer.h>
-#include <algine/lighting/DirLight.h>
-#include <algine/lighting/PointLight.h>
 #include <algine/lighting/DirLamp.h>
 #include <algine/lighting/PointLamp.h>
 #include <algine/lighting/Manager.h>
@@ -36,7 +34,9 @@
 #include <algine/gputils.h>
 #include <algine/event.h>
 #include <algine/shader.h>
-#include <algine/texture.h>
+#include <algine/texture/Texture2D.h>
+#include <algine/texture/TextureCube.h>
+#include <algine/texture/TextureTools.h>
 #include <algine/model.h>
 #include <algine/CubeRenderer.h>
 #include <algine/QuadRenderer.h>
@@ -1042,16 +1042,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_M && action == GLFW_PRESS) {
         Framebuffer *const dFramebuffer = dirLamps[0].shadowMapFb;
         dFramebuffer->bind();
-        const auto dPixelsData = dFramebuffer->getAllPixels2D(Framebuffer::DepthAttachment);
-        saveTexImage(dPixelsData.pixels.array(), dPixelsData.width, dPixelsData.height, 1,
-                Path::join(Path::getWorkingDirectory(), "dir_depth.bmp"), 3);
+        auto dPixelsData = dFramebuffer->getAllPixels2D(Framebuffer::DepthAttachment);
+        TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "dir_depth.bmp"), dPixelsData, 3);
         dFramebuffer->unbind();
 
         Framebuffer *const pFramebuffer = pointLamps[0].shadowMapFb;
         pFramebuffer->bind();
-        const auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Right, Framebuffer::DepthAttachment);
-        saveTexImage(pPixelsData.pixels.array(), pPixelsData.width, pPixelsData.height, 1,
-                Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), 3);
+        auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Right, Framebuffer::DepthAttachment);
+        TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), pPixelsData, 3);
         pFramebuffer->unbind();
 
         std::cout << "Depth map data saved\n";
