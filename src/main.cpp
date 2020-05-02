@@ -14,7 +14,10 @@
 #include <glm/glm.hpp>
 #include <tulz/Path>
 
-#include <algine/framebuffer.h>
+#include <algine/core/ShaderProgram.h>
+#include <algine/core/ShaderManager.h>
+#include <algine/core/Framebuffer.h>
+#include <algine/core/Renderbuffer.h>
 #include <algine/lighting/DirLamp.h>
 #include <algine/lighting/PointLamp.h>
 #include <algine/lighting/Manager.h>
@@ -29,11 +32,9 @@
 #include <algine/ext/constants/COCShader.h>
 #include <algine/ext/constants/BlendDOF.h>
 #include <algine/camera.h>
-#include <algine/renderbuffer.h>
 #include <algine/debug.h>
 #include <algine/gputils.h>
 #include <algine/event.h>
-#include <algine/shader.h>
 #include <algine/texture/Texture2D.h>
 #include <algine/texture/TextureCube.h>
 #include <algine/texture/TextureTools.h>
@@ -387,7 +388,7 @@ void initShaders() {
         pointShadowShader->loadActiveLocations();
 
         // dir shadow shader
-        ShadersData shadowShaderTemplate = manager.getTemplate();
+        ShadersInfo shadowShaderTemplate = manager.getTemplate();
         shadowShaderTemplate.geometry = std::string(); // we don't need geometry shader for dir light shadows
         manager.fromSource(shadowShaderTemplate);
         manager.removeDefinition(ShadowShader::Settings::PointLightShadowMapping);
