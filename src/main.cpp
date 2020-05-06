@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <tulz/Path>
 
+#include <algine/core/Engine.h>
 #include <algine/core/ShaderProgram.h>
 #include <algine/core/ShaderManager.h>
 #include <algine/core/Framebuffer.h>
@@ -33,7 +34,6 @@
 #include <algine/ext/constants/BlendDOF.h>
 #include <algine/camera.h>
 #include <algine/debug.h>
-#include <algine/gputils.h>
 #include <algine/event.h>
 #include <algine/texture/Texture2D.h>
 #include <algine/texture/TextureCube.h>
@@ -333,7 +333,15 @@ void initGL() {
     enableGLDebugOutput();
 #endif
 
-    std::cout << "Your GPU vendor: " << getGPUVendor() << "\nYour GPU renderer: " << getGPURenderer() << "\n";
+    std::cout << "Your GPU vendor: " << Engine::getGPUVendor() << "\nYour GPU renderer: " << Engine::getGPURenderer() << "\n";
+
+    Engine::init();
+
+    // SOP test
+//    auto test1 = new Framebuffer();
+//    auto test2 = new Framebuffer();
+//    test1->bind();
+//    test2->unbind();
 }
 
 /**
@@ -745,6 +753,8 @@ void recycleAll() {
     TextureCube::destroy(skybox);
 
     Renderbuffer::destroy(rbo);
+
+    Engine::destroy();
 }
 
 void sendLampsData() {
