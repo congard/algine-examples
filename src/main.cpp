@@ -15,8 +15,8 @@
 #include <tulz/Path>
 
 #include <algine/core/Engine.h>
-#include <algine/core/ShaderProgram.h>
-#include <algine/core/ShaderManager.h>
+#include <algine/core/shader/ShaderProgram.h>
+#include <algine/core/shader/ShaderManager.h>
 #include <algine/core/Framebuffer.h>
 #include <algine/core/Renderbuffer.h>
 #include <algine/lighting/DirLamp.h>
@@ -35,9 +35,9 @@
 #include <algine/camera.h>
 #include <algine/debug.h>
 #include <algine/event.h>
-#include <algine/texture/Texture2D.h>
-#include <algine/texture/TextureCube.h>
-#include <algine/texture/TextureTools.h>
+#include <algine/core/texture/Texture2D.h>
+#include <algine/core/texture/TextureCube.h>
+#include <algine/core/texture/TextureTools.h>
 #include <algine/model.h>
 #include <algine/CubeRenderer.h>
 #include <algine/QuadRenderer.h>
