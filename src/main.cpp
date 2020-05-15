@@ -19,30 +19,33 @@
 #include <algine/core/shader/ShaderManager.h>
 #include <algine/core/Framebuffer.h>
 #include <algine/core/Renderbuffer.h>
-#include <algine/lighting/DirLamp.h>
-#include <algine/lighting/PointLamp.h>
-#include <algine/lighting/Manager.h>
+#include <algine/core/texture/Texture2D.h>
+#include <algine/core/texture/TextureCube.h>
+#include <algine/core/texture/TextureTools.h>
+
+#include <algine/std/camera.h>
+#include <algine/std/model.h>
+#include <algine/std/lighting/DirLamp.h>
+#include <algine/std/lighting/PointLamp.h>
+#include <algine/std/lighting/Manager.h>
+#include <algine/std/CubeRenderer.h>
+#include <algine/std/QuadRenderer.h>
+
+#include <algine/ext/debug.h>
+#include <algine/ext/event.h>
+#include <algine/ext/Blur.h>
+#include <algine/ext/constants/BlurShader.h>
+#include <algine/ext/constants/SSRShader.h>
+#include <algine/ext/constants/BlendBloom.h>
+#include <algine/ext/constants/COCShader.h>
+#include <algine/ext/constants/BlendDOF.h>
+
 #include <algine/constants/BoneSystem.h>
 #include <algine/constants/ShadowShader.h>
 #include <algine/constants/CubemapShader.h>
 #include <algine/constants/Material.h>
 #include <algine/constants/Lighting.h>
 #include <algine/constants/NormalMapping.h>
-#include <algine/ext/constants/SSRShader.h>
-#include <algine/ext/constants/BlendBloom.h>
-#include <algine/ext/constants/COCShader.h>
-#include <algine/ext/constants/BlendDOF.h>
-#include <algine/camera.h>
-#include <algine/debug.h>
-#include <algine/event.h>
-#include <algine/core/texture/Texture2D.h>
-#include <algine/core/texture/TextureCube.h>
-#include <algine/core/texture/TextureTools.h>
-#include <algine/model.h>
-#include <algine/CubeRenderer.h>
-#include <algine/QuadRenderer.h>
-#include <algine/ext/Blur.h>
-#include <algine/ext/constants/BlurShader.h>
 
 #include "ColorShader.h"
 #include "BlendShader.h"
