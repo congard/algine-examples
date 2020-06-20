@@ -34,8 +34,8 @@
 #include <algine/std/QuadRenderer.h>
 
 #include <algine/ext/debug.h>
-#include <algine/ext/event.h>
 #include <algine/ext/Blur.h>
+#include <algine/ext/event/MouseEvent.h>
 #include <algine/ext/constants/BlurShader.h>
 #include <algine/ext/constants/SSRShader.h>
 #include <algine/ext/constants/BlendBloom.h>
@@ -84,7 +84,7 @@ constexpr uint modelsCount = 3;
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, int button, int action, int mods);
-void mouse_callback(algine::MouseEventListener::MouseEvent *event);
+void mouse_callback(MouseEvent *event);
 void cursor_pos_callback(GLFWwindow* window, double x, double y);
 
 // Window dimensions
@@ -1122,13 +1122,13 @@ void cursor_pos_callback(GLFWwindow* window, double x, double y) {
     mouseEventListener.mouseMove(x, y);
 }
 
-void mouse_callback(MouseEventListener::MouseEvent *event) {
+void mouse_callback(MouseEvent *event) {
     switch(event->action) {
         case MouseEventListener::ActionDown:
             camController.setMousePos(event->getX(), event->getY());
             break;
         case MouseEventListener::ActionMove:
-            if (!event->listener->buttons[MouseEventListener::ButtonLeft].isPressed)
+            if (!event->listener->getLeftButton().isPressed)
                 break;
             
             camController.mouseMove(event->getX(), event->getY());
