@@ -216,14 +216,14 @@ void createPointLamp(PointLamp &result, const glm::vec3 &pos, const glm::vec3 &c
     result.updateMatrix();
     result.initShadows(shadowMapResolution, shadowMapResolution);
 
-    colorShader->use();
+    colorShader->bind();
     lightManager.transmitter.setColor(result, id);
     lightManager.transmitter.setKc(result, id);
     lightManager.transmitter.setKl(result, id);
     lightManager.transmitter.setKq(result, id);
     lightManager.transmitter.setFarPlane(result, id);
     lightManager.transmitter.setBias(result, id);
-    ShaderProgram::reset();
+    colorShader->unbind();
 }
 
 void createDirLamp(DirLamp &result,
@@ -245,7 +245,7 @@ void createDirLamp(DirLamp &result,
     result.updateMatrix();
     result.initShadows(shadowMapResolution, shadowMapResolution);
 
-    colorShader->use();
+    colorShader->bind();
     lightManager.transmitter.setColor(result, id);
     lightManager.transmitter.setKc(result, id);
     lightManager.transmitter.setKl(result, id);
@@ -253,7 +253,7 @@ void createDirLamp(DirLamp &result,
     lightManager.transmitter.setMinBias(result, id);
     lightManager.transmitter.setMaxBias(result, id);
     lightManager.transmitter.setLightMatrix(result, id);
-    ShaderProgram::reset();
+    colorShader->unbind();
 }
 
 void
@@ -594,7 +594,7 @@ void initShaders() {
     cocFb->unbind();
 
     // configuring CS
-    colorShader->use();
+    colorShader->bind();
     colorShader->setInt(Module::Material::Vars::AmbientTex, 0);
     colorShader->setInt(Module::Material::Vars::DiffuseTex, 1);
     colorShader->setInt(Module::Material::Vars::SpecularTex, 2);
@@ -604,12 +604,12 @@ void initShaders() {
     colorShader->setFloat(Module::Lighting::Vars::ShadowOpacity, shadowOpacity);
 
     // configuring CubemapShader
-    skyboxShader->use();
+    skyboxShader->bind();
     skyboxShader->setVec3(CubemapShader::Vars::Color, glm::vec3(0.125f));
     skyboxShader->setFloat(CubemapShader::Vars::PosScaling, 64.0f);
 
     // blend setting
-    blendShader->use();
+    blendShader->bind();
     blendShader->setInt(BlendShader::Vars::BaseImage, 0); // GL_TEXTURE0
     blendShader->setInt(BlendShader::Vars::BloomImage, 1); // GL_TEXTURE1
     blendShader->setInt(BlendShader::Vars::DofImage, 2); // GL_TEXTURE2
@@ -619,11 +619,11 @@ void initShaders() {
     blendShader->setFloat(BlendShader::Vars::Gamma, blendGamma);
 
     // screen space setting
-    ssrShader->use();
+    ssrShader->bind();
     ssrShader->setInt(SSRShader::Vars::NormalMap, 1);
     ssrShader->setInt(SSRShader::Vars::SSRValuesMap, 2);
     ssrShader->setInt(SSRShader::Vars::PositionMap, 3);
-    ssrShader->reset();
+    ssrShader->unbind();
 }
 
 /**
@@ -714,7 +714,7 @@ void initLamps() {
 }
 
 void initShadowMaps() {
-    colorShader->use();
+    colorShader->bind();
 
     lightManager.configureShadowMapping();
     for (usize i = 0; i < pointLightsCount; i++)
@@ -722,25 +722,25 @@ void initShadowMaps() {
     for (usize i = 0; i < dirLightsCount; i++)
         lightManager.transmitter.setShadowMap(dirLamps[i], i);
 
-    colorShader->reset();
+    colorShader->unbind();
 }
 
 void initShadowCalculation() {
-    colorShader->use();
+    colorShader->bind();
     colorShader->setFloat(Module::Lighting::Vars::ShadowDiskRadiusK, diskRadius_k);
     colorShader->setFloat(Module::Lighting::Vars::ShadowDiskRadiusMin, diskRadius_min);
-    glUseProgram(0);
+    colorShader->unbind();
 }
 
 /**
  * Initialize Depth of field
  */
 void initDOF() {
-    dofCoCShader->use();
+    dofCoCShader->bind();
     dofCoCShader->setFloat(COCShader::Vars::Cinematic::Aperture, dofAperture);
     dofCoCShader->setFloat(COCShader::Vars::Cinematic::ImageDistance, dofImageDistance);
     dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, -1.0f);
-    dofCoCShader->reset();
+    dofCoCShader->unbind();
 }
 
 /* init code end */
@@ -817,10 +817,8 @@ void drawModelDM(const Model &model, ShaderProgram *program, const glm::mat4 &ma
 inline void useNotNull(Texture2D *const tex, const uint slot) {
     if (tex != nullptr)
         tex->use(slot);
-    else {
-        glActiveTexture(GL_TEXTURE0 + slot); // TODO: Engine::getDefaultTexture2D()
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
+    else
+        Engine::defaultTexture2D()->use(slot);
 }
 
 void drawModel(const Model &model) {
@@ -908,7 +906,7 @@ void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, winWidth, winHeight);
 
-    colorShader->use();
+    colorShader->bind();
 
     // sending lamps parameters to fragment shader
 	sendLampsData();
@@ -924,7 +922,7 @@ void render() {
     displayFb->update();
 
     glDepthFunc(GL_LEQUAL);
-    skyboxShader->use();
+    skyboxShader->bind();
     skyboxShader->setMat3(CubemapShader::Vars::ViewMatrix, glm::mat3(camera.getViewMatrix()));
     skyboxShader->setMat4(CubemapShader::Vars::TransformationMatrix, camera.getProjectionMatrix() * glm::mat4(glm::mat3(camera.getViewMatrix())));
     skybox->use(0);
@@ -936,7 +934,7 @@ void render() {
     quadRenderer->getInputLayout()->bind();
 
     screenspaceFb->bind();
-    ssrShader->use();
+    ssrShader->bind();
     colorTex->use(0);
     normalTex->use(1);
     ssrValues->use(2);
@@ -945,7 +943,7 @@ void render() {
 
     glViewport(0, 0, winWidth * bloomK, winHeight * bloomK);
     bloomSearchFb->bind();
-    bloomSearchShader->use();
+    bloomSearchShader->bind();
     screenspaceTex->use(0);
     quadRenderer->draw();
     bloomBlur->makeBlur(bloomTex);
@@ -953,7 +951,7 @@ void render() {
 
     glViewport(0, 0, winWidth * dofK, winHeight * dofK);
     cocFb->bind();
-    dofCoCShader->use();
+    dofCoCShader->bind();
     positionTex->use(0);
     quadRenderer->draw();
 
@@ -961,9 +959,9 @@ void render() {
     dofBlur->makeBlur(screenspaceTex);
     glViewport(0, 0, winWidth, winHeight);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); // TODO: should be like Engine::defaultFramebuffer->bind()
+    Engine::defaultFramebuffer()->bind();
     glClear(GL_DEPTH_BUFFER_BIT); // color will cleared by quad rendering
-    blendShader->use();
+    blendShader->bind();
     screenspaceTex->use(0);
     bloomBlur->get()->use(1);
     dofBlur->get()->use(2);
@@ -979,18 +977,18 @@ void display() {
 
     // shadow rendering
     // point lights
-    pointShadowShader->use();
+    pointShadowShader->bind();
 	for (uint i = 0; i < pointLightsCount; i++) {
 	    lightManager.transmitter.setShadowShaderFarPlane(pointLamps[i]);
         renderToDepthCubemap(i);
     }
 
     // dir lights
-    dirShadowShader->use();
+    dirShadowShader->bind();
     for (uint i = 0; i < dirLightsCount; i++)
         renderToDepthMap(i);
 	
-    ssrShader->use();
+    ssrShader->bind();
     ssrShader->setMat4(SSRShader::Vars::ProjectionMatrix, camera.getProjectionMatrix());
     ssrShader->setMat4(SSRShader::Vars::ViewMatrix, camera.getViewMatrix());
 
@@ -1149,9 +1147,9 @@ void mouse_callback(MouseEvent *event) {
             cout << "Click: x: " << x << "; y: " << y << "\n";
             cout << "Position map: x: " << pixels[0] << "; y: " << pixels[1] << "; z: " << pixels[2] << "\n";
         
-            dofCoCShader->use();
+            dofCoCShader->bind();
             dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
-            dofCoCShader->reset();
+            dofCoCShader->unbind();
             break;
     }
 }
