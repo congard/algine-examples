@@ -26,7 +26,8 @@
 #include <algine/std/camera/Camera.h>
 #include <algine/std/camera/FPSCameraController.h>
 #include <algine/std/rotator/EulerRotator.h>
-#include <algine/std/model.h>
+#include <algine/std/model/Model.h>
+#include <algine/std/model/ShapeLoader.h>
 #include <algine/std/lighting/DirLamp.h>
 #include <algine/std/lighting/PointLamp.h>
 #include <algine/std/lighting/Manager.h>
