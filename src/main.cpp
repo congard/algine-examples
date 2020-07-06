@@ -328,12 +328,8 @@ void initGL() {
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
     // Initialize GLEW to setup the OpenGL Function pointers
-    if (glewInit() != GLEW_NO_ERROR) std::cout << "GLEW init failed\n";
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-	glDepthMask(true);
+    if (glewInit() != GLEW_NO_ERROR)
+        std::cout << "GLEW init failed\n";
 
 #ifdef DEBUG_OUTPUT
     enableGLDebugOutput();
@@ -342,6 +338,9 @@ void initGL() {
     std::cout << "Your GPU vendor: " << Engine::getGPUVendor() << "\nYour GPU renderer: " << Engine::getGPURenderer() << "\n";
 
     Engine::init();
+    Engine::enableDepthTest();
+    Engine::enableDepthMask();
+    Engine::enableFaceCulling();
 
     // SOP test
 //    auto test1 = new Framebuffer();
@@ -798,18 +797,15 @@ void updateMatrices() {
 void drawModelDM(const Model &model, ShaderProgram *program, const glm::mat4 &mat = glm::mat4(1.0f)) {
     model.shape->inputLayouts[0]->bind();
 
-    if (model.shape->bonesPerVertex != 0) {
-        for (int i = 0; i < model.shape->bones.size(); i++) {
-            program->setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bones[i].finalTransformation);
-        }
-    }
+    if (model.shape->bonesPerVertex != 0)
+        for (int i = 0; i < model.shape->bones.size(); i++)
+            ShaderProgram::setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bones[i].finalTransformation);
 
     program->setInt(BoneSystem::Vars::BoneAttribsPerVertex, (int)(model.shape->bonesPerVertex / 4 + (model.shape->bonesPerVertex % 4 == 0 ? 0 : 1)));
     program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model.m_transform);
     
-    for (size_t i = 0; i < model.shape->meshes.size(); i++) {
-        glDrawElements(GL_TRIANGLES, model.shape->meshes[i].count, GL_UNSIGNED_INT, reinterpret_cast<void*>(model.shape->meshes[i].start * sizeof(uint)));
-    }
+    for (auto & mesh : model.shape->meshes)
+        Engine::drawElements(mesh.start, mesh.count);
 }
 
 /**
@@ -825,17 +821,15 @@ inline void useNotNull(Texture2D *const tex, const uint slot) {
 void drawModel(const Model &model) {
     model.shape->inputLayouts[1]->bind();
     
-    if (model.shape->bonesPerVertex != 0) {
-        for (int i = 0; i < model.shape->bones.size(); i++) {
-            colorShader->setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bones[i].finalTransformation);
-        }
-    }
+    if (model.shape->bonesPerVertex != 0)
+        for (int i = 0; i < model.shape->bones.size(); i++)
+            ShaderProgram::setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bones[i].finalTransformation);
 
     colorShader->setInt(BoneSystem::Vars::BoneAttribsPerVertex, model.shape->bonesPerVertex / 4 + (model.shape->bonesPerVertex % 4 == 0 ? 0 : 1));
     modelMatrix = &model.m_transform;
 	updateMatrices();
-    for (size_t i = 0; i < model.shape->meshes.size(); i++) {
-        Material &material = model.shape->meshes[i].material;
+    for (auto & mesh : model.shape->meshes) {
+        Material &material = mesh.material;
         useNotNull(material.ambientTexture.get(), 0);
         useNotNull(material.diffuseTexture.get(), 1);
         useNotNull(material.specularTexture.get(), 2);
@@ -843,12 +837,12 @@ void drawModel(const Model &model) {
         useNotNull(material.reflectionTexture.get(), 4);
         useNotNull(material.jitterTexture.get(), 5);
 
-        colorShader->setFloat(Module::Material::Vars::AmbientStrength, model.shape->meshes[i].material.ambientStrength);
-        colorShader->setFloat(Module::Material::Vars::DiffuseStrength, model.shape->meshes[i].material.diffuseStrength);
-        colorShader->setFloat(Module::Material::Vars::SpecularStrength, model.shape->meshes[i].material.specularStrength);
-        colorShader->setFloat(Module::Material::Vars::Shininess, model.shape->meshes[i].material.shininess);
+        colorShader->setFloat(Module::Material::Vars::AmbientStrength, mesh.material.ambientStrength);
+        colorShader->setFloat(Module::Material::Vars::DiffuseStrength, mesh.material.diffuseStrength);
+        colorShader->setFloat(Module::Material::Vars::SpecularStrength, mesh.material.specularStrength);
+        colorShader->setFloat(Module::Material::Vars::Shininess, mesh.material.shininess);
 
-        glDrawElements(GL_TRIANGLES, model.shape->meshes[i].count, GL_UNSIGNED_INT, reinterpret_cast<void*>(model.shape->meshes[i].start * sizeof(uint)));
+        Engine::drawElements(mesh.start, mesh.count);
     }
 }
 
@@ -858,9 +852,10 @@ void drawModel(const Model &model) {
 void renderToDepthCubemap(const uint index) {
 	pointLamps[index].begin();
     pointLamps[index].updateMatrix();
+    pointLamps[index].shadowMapFb->clearDepthBuffer();
+
     lightManager.transmitter.setShadowShaderPos(pointLamps[index]);
 	lightManager.transmitter.setShadowShaderMatrices(pointLamps[index]);
-	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// drawing models
     for (size_t i = 0; i < modelsCount; i++)
@@ -880,7 +875,7 @@ void renderToDepthCubemap(const uint index) {
  */
 void renderToDepthMap(uint index) {
 	dirLamps[index].begin();
-	glClear(GL_DEPTH_BUFFER_BIT);
+    dirLamps[index].shadowMapFb->clearDepthBuffer();
 
 	// drawing models
     for (size_t i = 0; i < modelsCount; i++)
@@ -902,10 +897,9 @@ void render() {
     displayFb->bind();
     displayFb->setActiveAttachmentsList(0);
     displayFb->update();
+    displayFb->clear(Framebuffer::ColorBuffer | Framebuffer::DepthBuffer);
 
-    // TODO: glClear, glViewport etc must be part of Application (or AlgineApplication?) class
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, winWidth, winHeight);
+    Engine::setViewport(winWidth, winHeight);
 
     colorShader->bind();
 
@@ -922,14 +916,14 @@ void render() {
     displayFb->setActiveAttachmentsList(1);
     displayFb->update();
 
-    glDepthFunc(GL_LEQUAL);
+    Engine::setDepthTestMode(Engine::DepthTestLessOrEqual);
     skyboxShader->bind();
     skyboxShader->setMat3(CubemapShader::Vars::ViewMatrix, glm::mat3(camera.getViewMatrix()));
     skyboxShader->setMat4(CubemapShader::Vars::TransformationMatrix, camera.getProjectionMatrix() * glm::mat4(glm::mat3(camera.getViewMatrix())));
     skybox->use(0);
     skyboxRenderer->getInputLayout()->bind();
     skyboxRenderer->draw();
-    glDepthFunc(GL_LESS);
+    Engine::setDepthTestMode(Engine::DepthTestLess);
 
     // postprocessing
     quadRenderer->getInputLayout()->bind();
@@ -942,15 +936,14 @@ void render() {
     positionTex->use(3);
     quadRenderer->draw();
 
-    glViewport(0, 0, winWidth * bloomK, winHeight * bloomK);
+    Engine::setViewport(winWidth * bloomK, winHeight * bloomK);
     bloomSearchFb->bind();
     bloomSearchShader->bind();
     screenspaceTex->use(0);
     quadRenderer->draw();
     bloomBlur->makeBlur(bloomTex);
-    glViewport(0, 0, winWidth, winHeight);
 
-    glViewport(0, 0, winWidth * dofK, winHeight * dofK);
+    Engine::setViewport(winWidth * dofK, winHeight * dofK);
     cocFb->bind();
     dofCoCShader->bind();
     positionTex->use(0);
@@ -958,16 +951,17 @@ void render() {
 
     cocBlur->makeBlur(cocTex);
     dofBlur->makeBlur(screenspaceTex);
-    glViewport(0, 0, winWidth, winHeight);
+    Engine::setViewport(winWidth, winHeight);
 
     Engine::defaultFramebuffer()->bind();
-    glClear(GL_DEPTH_BUFFER_BIT); // color will cleared by quad rendering
+    Engine::defaultFramebuffer()->clearDepthBuffer(); // color buffer will cleared by quad rendering
     blendShader->bind();
     screenspaceTex->use(0);
     bloomBlur->get()->use(1);
     dofBlur->get()->use(2);
     cocBlur->get()->use(3);
     quadRenderer->draw();
+    blendShader->unbind();
 }
 
 void display() {
@@ -995,7 +989,6 @@ void display() {
 
 	/* --- color rendering --- */
 	render();
-	glUseProgram(0);
 }
 
 void animate_scene() {
