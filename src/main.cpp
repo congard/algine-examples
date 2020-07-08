@@ -667,7 +667,7 @@ void createModels() {
     models[0].shape = shapes[0].get();
 
     // animated man
-    manAnimator = Animator(AnimShape(&shapes[2]->animations, &shapes[2]->bones, &shapes[2]->globalInverseTransform, &shapes[2]->rootNode));
+    manAnimator = Animator(shapes[2].get());
     models[1] = Model(Rotator::RotatorTypeSimple);
     models[1].shape = shapes[2].get();
     models[1].setPitch(glm::radians(-90.0f));
@@ -678,7 +678,7 @@ void createModels() {
     models[1].animator = &manAnimator;
 
     // animated astroboy
-    astroboyAnimator = Animator(AnimShape(&shapes[3]->animations, &shapes[3]->bones, &shapes[3]->globalInverseTransform, &shapes[3]->rootNode));
+    astroboyAnimator = Animator(shapes[3].get());
     models[2] = Model(Rotator::RotatorTypeSimple);
     models[2].shape = shapes[3].get();
     models[2].setPitch(glm::radians(-90.0f));
