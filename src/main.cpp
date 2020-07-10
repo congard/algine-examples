@@ -83,10 +83,10 @@ constexpr uint modelsCount = 3;
 #define resources "src/resources/"
 
 // Function prototypes
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void mouse_callback(GLFWwindow* window, int button, int action, int mods);
+void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* glfwWindow, int button, int action, int mods);
 void mouse_callback(MouseEvent *event);
-void cursor_pos_callback(GLFWwindow* window, double x, double y);
+void cursor_pos_callback(GLFWwindow* glfwWindow, double x, double y);
 
 // Window dimensions
 uint winWidth = 1366, winHeight = 763;
@@ -654,7 +654,7 @@ void initShapes() {
 
     createShapes(path + "chess/Classic Chess small.obj", path + "chess", 0, false, 0); // classic chess
     createShapes(path + "japanese_lamp/japanese_lamp.obj", path + "japanese_lamp", 1, true, 0); // Japanese lamp
-    createShapes(path + "man/man.dae", path + "man", 2, false, 4); // animated man
+    createShapes(path + "man/man.fbx", path + "man", 2, false, 4); // animated man
     createShapes(path + "astroboy/astroboy_walk.dae", path + "astroboy", 3, false, 4);
 }
 
@@ -667,11 +667,9 @@ void createModels() {
     models[0].shape = shapes[0].get();
 
     // animated man
-    manAnimator = Animator(shapes[2].get());
+    manAnimator = Animator(shapes[2].get(), "Armature|Run");
     models[1] = Model(Rotator::RotatorTypeSimple);
     models[1].shape = shapes[2].get();
-    models[1].setPitch(glm::radians(-90.0f));
-    models[1].rotate();
     models[1].setX(-2.0f);
     models[1].translate();
     models[1].updateMatrix();
@@ -1045,9 +1043,15 @@ int main() {
     return 0;
 }
 
+#define keyPressed(keyCode) key == keyCode && action == GLFW_PRESS
+
 // Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
-    if (key == GLFW_KEY_M && action == GLFW_PRESS) {
+void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mode) {
+    if (keyPressed(GLFW_KEY_1)) {
+        manAnimator.setAnimation("Armature|Run");
+    } else if (keyPressed(GLFW_KEY_2)) {
+        manAnimator.setAnimation("Armature|Stand");
+    } if (keyPressed(GLFW_KEY_M)) {
         Framebuffer *const dFramebuffer = dirLamps[0].shadowMapFb;
         dFramebuffer->bind();
         auto dPixelsData = dFramebuffer->getAllPixels2D(Framebuffer::DepthAttachment);
@@ -1061,9 +1065,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         pFramebuffer->unbind();
 
         std::cout << "Depth map data saved\n";
-    }
-    else if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
-    else if (action == GLFW_REPEAT || action == GLFW_RELEASE) {
+    } else if (keyPressed(GLFW_KEY_ESCAPE)) {
+        glfwSetWindowShouldClose(glfwWindow, GL_TRUE);
+    } else if (action == GLFW_REPEAT || action == GLFW_RELEASE) {
         if (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D) {
             if (key == GLFW_KEY_W)
                 camController.goForward();
@@ -1093,10 +1097,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
-    double x;
-    double y;
-    glfwGetCursorPos(window, &x, &y);
+void mouse_callback(GLFWwindow* glfwWindow, int button, int action, int mods) {
+    float x, y;
+
+    {
+        double d_x, d_y;
+        glfwGetCursorPos(glfwWindow, &d_x, &d_y);
+        x = static_cast<float>(d_x);
+        y = static_cast<float>(d_y);
+    }
     
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
         mouseEventListener.buttonDown(x, y, MouseEventListener::ButtonRight);
@@ -1110,7 +1119,7 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
     }
 }
 
-void cursor_pos_callback(GLFWwindow* window, double x, double y) {
+void cursor_pos_callback(GLFWwindow* glfwWindow, double x, double y) {
     mouseEventListener.mouseMove(x, y);
 }
 
