@@ -1092,7 +1092,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
                 manHeadRotator.setPitch(manHeadRotator.getPitch() - glm::radians(5.0f));
 
             manHeadRotator.rotate(r);
-            shapes[2]->setNodeTransform("Armature_Head", r);
+            shapes[2]->setNodeTransform("Head", r);
         }
     }
 }
