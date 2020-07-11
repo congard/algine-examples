@@ -796,8 +796,8 @@ void drawModelDM(const Model &model, ShaderProgram *program, const glm::mat4 &ma
     model.shape->inputLayouts[0]->bind();
 
     if (model.shape->bonesPerVertex != 0)
-        for (int i = 0; i < model.shape->bones.size(); i++)
-            ShaderProgram::setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bones[i].finalTransformation);
+        for (int i = 0; i < model.shape->bonesStorage.count(); i++)
+            ShaderProgram::setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bonesStorage[i].finalTransformation);
 
     program->setInt(BoneSystem::Vars::BoneAttribsPerVertex, (int)(model.shape->bonesPerVertex / 4 + (model.shape->bonesPerVertex % 4 == 0 ? 0 : 1)));
     program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model.m_transform);
@@ -820,8 +820,8 @@ void drawModel(const Model &model) {
     model.shape->inputLayouts[1]->bind();
     
     if (model.shape->bonesPerVertex != 0)
-        for (int i = 0; i < model.shape->bones.size(); i++)
-            ShaderProgram::setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bones[i].finalTransformation);
+        for (int i = 0; i < model.shape->bonesStorage.count(); i++)
+            ShaderProgram::setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bonesStorage[i].finalTransformation);
 
     colorShader->setInt(BoneSystem::Vars::BoneAttribsPerVertex, model.shape->bonesPerVertex / 4 + (model.shape->bonesPerVertex % 4 == 0 ? 0 : 1));
     modelMatrix = &model.m_transform;
