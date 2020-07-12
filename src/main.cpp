@@ -266,7 +266,7 @@ createShapes(const string &path, const string &texPath, const size_t id, const b
     if (inverseNormals)
         shapeLoader.addParam(ShapeLoader::InverseNormals);
     shapeLoader.addParams(ShapeLoader::Triangulate, ShapeLoader::SortByPolygonType,
-            ShapeLoader::CalcTangentSpace, ShapeLoader::JoinIdenticalVertices);
+            ShapeLoader::CalcTangentSpace, ShapeLoader::JoinIdenticalVertices, ShapeLoader::PrepareAllAnimations);
     shapeLoader.getShape()->bonesPerVertex = bonesPerVertex;
     shapeLoader.load();
 
@@ -664,21 +664,21 @@ void initShapes() {
 void createModels() {
     // classic chess
     models[0] = Model(Rotator::RotatorTypeSimple);
-    models[0].shape = shapes[0].get();
+    models[0].setShape(shapes[0].get());
 
     // animated man
     manAnimator = Animator(shapes[2].get(), "Armature|Run");
     models[1] = Model(Rotator::RotatorTypeSimple);
-    models[1].shape = shapes[2].get();
+    models[1].setShape(shapes[2].get());
     models[1].setX(-2.0f);
     models[1].translate();
     models[1].updateMatrix();
-    models[1].animator = &manAnimator;
+    models[1].setAnimator(&manAnimator);
 
     // animated astroboy
     astroboyAnimator = Animator(shapes[3].get());
     models[2] = Model(Rotator::RotatorTypeSimple);
-    models[2].shape = shapes[3].get();
+    models[2].setShape(shapes[3].get());
     models[2].setPitch(glm::radians(-90.0f));
     models[2].rotate();
     models[2].setScale(glm::vec3(50.0f));
@@ -686,7 +686,7 @@ void createModels() {
     models[2].setX(2.0f);
     models[2].translate();
     models[2].updateMatrix();
-    models[2].animator = &astroboyAnimator;
+    models[2].setAnimator(&astroboyAnimator);
 }
 
 /**
@@ -694,14 +694,14 @@ void createModels() {
  */
 void initLamps() {
     lamps[0] = Model(Rotator::RotatorTypeSimple);
-    lamps[0].shape = shapes[1].get();
+    lamps[0].setShape(shapes[1].get());
     pointLamps[0].mptr = &lamps[0];
     createPointLamp(pointLamps[0], glm::vec3(0.0f, 8.0f, 15.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0);
     lamps[0].translate();
     lamps[0].updateMatrix();
 
     lamps[1] = Model(Rotator::RotatorTypeSimple);
-    lamps[1].shape = shapes[1].get();
+    lamps[1].setShape(shapes[1].get());
     dirLamps[0].mptr = &lamps[1];
     createDirLamp(dirLamps[0],
             glm::vec3(0.0f, 8.0f, -15.0f),
@@ -793,16 +793,17 @@ void updateMatrices() {
  * if point light, leave mat empty, but if dir light - it must be light space matrix
  */
 void drawModelDM(const Model &model, ShaderProgram *program, const glm::mat4 &mat = glm::mat4(1.0f)) {
-    model.shape->inputLayouts[0]->bind();
+    Shape *shape = model.getShape();
+    shape->inputLayouts[0]->bind();
 
-    if (model.shape->bonesPerVertex != 0)
-        for (int i = 0; i < model.shape->bonesStorage.count(); i++)
-            ShaderProgram::setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bonesStorage[i].finalTransformation);
+    if (shape->bonesPerVertex != 0)
+        for (int i = 0; i < shape->bonesStorage.count(); i++)
+            ShaderProgram::setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.getBone(i));
 
-    program->setInt(BoneSystem::Vars::BoneAttribsPerVertex, (int)(model.shape->bonesPerVertex / 4 + (model.shape->bonesPerVertex % 4 == 0 ? 0 : 1)));
+    program->setInt(BoneSystem::Vars::BoneAttribsPerVertex, (int)(shape->bonesPerVertex / 4 + (shape->bonesPerVertex % 4 == 0 ? 0 : 1)));
     program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model.m_transform);
     
-    for (auto & mesh : model.shape->meshes)
+    for (auto & mesh : shape->meshes)
         Engine::drawElements(mesh.start, mesh.count);
 }
 
@@ -817,16 +818,17 @@ inline void useNotNull(Texture2D *const tex, const uint slot) {
 }
 
 void drawModel(const Model &model) {
-    model.shape->inputLayouts[1]->bind();
+    Shape *shape = model.getShape();
+    shape->inputLayouts[1]->bind();
     
-    if (model.shape->bonesPerVertex != 0)
-        for (int i = 0; i < model.shape->bonesStorage.count(); i++)
-            ShaderProgram::setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.shape->bonesStorage[i].finalTransformation);
+    if (shape->bonesPerVertex != 0)
+        for (int i = 0; i < shape->bonesStorage.count(); i++)
+            ShaderProgram::setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.getBone(i));
 
-    colorShader->setInt(BoneSystem::Vars::BoneAttribsPerVertex, model.shape->bonesPerVertex / 4 + (model.shape->bonesPerVertex % 4 == 0 ? 0 : 1));
+    colorShader->setInt(BoneSystem::Vars::BoneAttribsPerVertex, shape->bonesPerVertex / 4 + (shape->bonesPerVertex % 4 == 0 ? 0 : 1));
     modelMatrix = &model.m_transform;
 	updateMatrices();
-    for (auto & mesh : model.shape->meshes) {
+    for (auto & mesh : shape->meshes) {
         Material &material = mesh.material;
         useNotNull(material.ambientTexture.get(), 0);
         useNotNull(material.diffuseTexture.get(), 1);
@@ -965,8 +967,8 @@ void render() {
 void display() {
     // animate
     for (usize i = 0; i < modelsCount; i++)
-        if (models[i].shape->bonesPerVertex != 0)
-            models[i].animator->animate(glfwGetTime());
+        if (models[i].getShape()->bonesPerVertex != 0)
+            models[i].getAnimator()->animate(glfwGetTime());
 
     // shadow rendering
     // point lights
@@ -1045,12 +1047,18 @@ int main() {
 
 #define keyPressed(keyCode) key == keyCode && action == GLFW_PRESS
 
+inline void setManAnimation(const string &name) {
+    uint animationIndex = manAnimator.getShape()->getAnimationIndexByName(name);
+    manAnimator.setAnimationIndex(animationIndex);
+    models[1].setBonesFromAnimation(animationIndex);
+}
+
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mode) {
     if (keyPressed(GLFW_KEY_1)) {
-        manAnimator.setAnimation("Armature|Run");
+        setManAnimation("Armature|Run");
     } else if (keyPressed(GLFW_KEY_2)) {
-        manAnimator.setAnimation("Armature|Stand");
+        setManAnimation("Armature|Stand");
     } if (keyPressed(GLFW_KEY_M)) {
         Framebuffer *const dFramebuffer = dirLamps[0].shadowMapFb;
         dFramebuffer->bind();
