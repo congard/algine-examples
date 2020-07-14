@@ -33,6 +33,7 @@
 #include <algine/std/lighting/Manager.h>
 #include <algine/std/CubeRenderer.h>
 #include <algine/std/QuadRenderer.h>
+#include <algine/std/animation/AnimationBlender.h>
 
 #include <algine/ext/debug.h>
 #include <algine/ext/Blur.h>
@@ -99,6 +100,7 @@ const glm::mat4 *modelMatrix; // model matrix stored in Model::transformation
 shared_ptr<Shape> shapes[shapesCount];
 Model models[modelsCount], lamps[pointLightsCount + dirLightsCount];
 Animator manAnimator, astroboyAnimator; // animator for man, astroboy models
+AnimationBlender manAnimationBlender;
 
 // light
 PointLamp pointLamps[pointLightsCount];
@@ -668,12 +670,17 @@ void createModels() {
 
     // animated man
     manAnimator = Animator(shapes[2].get(), "Armature|Run");
+    manAnimationBlender.setShape(shapes[2].get());
+    manAnimationBlender.setFactor(0.25f);
+    manAnimationBlender.setLhsAnim(0);
+    manAnimationBlender.setRhsAnim(1);
     models[1] = Model(Rotator::RotatorTypeSimple);
     models[1].setShape(shapes[2].get());
     models[1].setX(-2.0f);
     models[1].translate();
     models[1].updateMatrix();
     models[1].setAnimator(&manAnimator);
+    models[1].setBones(&manAnimationBlender.bones());
 
     // animated astroboy
     astroboyAnimator = Animator(shapes[3].get());
@@ -966,9 +973,19 @@ void render() {
 
 void display() {
     // animate
-    for (usize i = 0; i < modelsCount; i++)
-        if (models[i].getShape()->bonesPerVertex != 0)
-            models[i].getAnimator()->animate(glfwGetTime());
+    for (usize i = 0; i < modelsCount; i++) {
+        if (models[i].getShape()->bonesPerVertex != 0) {
+            auto &animations = models[i].getShape()->animations;
+            auto animator = models[i].getAnimator();
+
+            for (uint j = 0; j < animations.size(); j++) {
+                animator->setAnimationIndex(j);
+                animator->animate(glfwGetTime());
+            }
+        }
+    }
+
+    manAnimationBlender.blend();
 
     // shadow rendering
     // point lights
@@ -1046,19 +1063,14 @@ int main() {
 }
 
 #define keyPressed(keyCode) key == keyCode && action == GLFW_PRESS
-
-inline void setManAnimation(const string &name) {
-    uint animationIndex = manAnimator.getShape()->getAnimationIndexByName(name);
-    manAnimator.setAnimationIndex(animationIndex);
-    models[1].setBonesFromAnimation(animationIndex);
-}
+#define keyHeld(keyCode) key == keyCode && (action == GLFW_PRESS || action == GLFW_REPEAT)
 
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mode) {
-    if (keyPressed(GLFW_KEY_1)) {
-        setManAnimation("Armature|Run");
-    } else if (keyPressed(GLFW_KEY_2)) {
-        setManAnimation("Armature|Stand");
+    if (keyHeld(GLFW_KEY_1)) {
+        manAnimationBlender.changeFactor(-0.025f);
+    } else if (keyHeld(GLFW_KEY_2)) {
+        manAnimationBlender.changeFactor(0.025f);
     } if (keyPressed(GLFW_KEY_M)) {
         Framebuffer *const dFramebuffer = dirLamps[0].shadowMapFb;
         dFramebuffer->bind();
