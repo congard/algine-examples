@@ -273,21 +273,26 @@ createShapes(const string &path, const string &texPath, const size_t id, const b
     shapeLoader.load();
 
     shapes[id].reset(shapeLoader.getShape());
-    shapes[id]->createInputLayout(
-            pointShadowShader->getLocation(ShadowShader::Vars::InPos),
-            -1, -1, -1, -1,
-            pointShadowShader->getLocation(BoneSystem::Vars::InBoneWeights),
-            pointShadowShader->getLocation(BoneSystem::Vars::InBoneIds)
-    ); // all shadow shaders have same ids
-    shapes[id]->createInputLayout(
-            colorShader->getLocation(ColorShader::Vars::InPos),
-            colorShader->getLocation(ColorShader::Vars::InTexCoord),
-            colorShader->getLocation(ColorShader::Vars::InNormal),
-            colorShader->getLocation(ColorShader::Vars::InTangent),
-            colorShader->getLocation(ColorShader::Vars::InBitangent),
-            colorShader->getLocation(BoneSystem::Vars::InBoneWeights),
-            colorShader->getLocation(BoneSystem::Vars::InBoneIds)
-    );
+
+    {
+        InputLayoutShapeLocations locations; // shadow shaders locations
+        locations.inPosition = pointShadowShader->getLocation(ShadowShader::Vars::InPos);
+        locations.inBoneWeights = pointShadowShader->getLocation(BoneSystem::Vars::InBoneWeights);
+        locations.inBoneIds = pointShadowShader->getLocation(BoneSystem::Vars::InBoneIds);
+        shapes[id]->createInputLayout(locations); // all shadow shaders have same ids
+    }
+
+    {
+        InputLayoutShapeLocations locations; // color shader locations
+        locations.inPosition = colorShader->getLocation(ColorShader::Vars::InPos);
+        locations.inTexCoord = colorShader->getLocation(ColorShader::Vars::InTexCoord);
+        locations.inNormal = colorShader->getLocation(ColorShader::Vars::InNormal);
+        locations.inTangent = colorShader->getLocation(ColorShader::Vars::InTangent);
+        locations.inBitangent = colorShader->getLocation(ColorShader::Vars::InBitangent);
+        locations.inBoneWeights = colorShader->getLocation(BoneSystem::Vars::InBoneWeights);
+        locations.inBoneIds = colorShader->getLocation(BoneSystem::Vars::InBoneIds);
+        shapes[id]->createInputLayout(locations);
+    }
 }
 
 /* init code begin */
@@ -754,9 +759,6 @@ void initDOF() {
  * Cleans memory before exit
  */
 void recycleAll() {
-    for (size_t i = 0; i < shapesCount; i++)
-        shapes[i]->recycle();
-
     Framebuffer::destroy(displayFb, screenspaceFb, bloomSearchFb, cocFb);
 
     Texture2D::destroy(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
