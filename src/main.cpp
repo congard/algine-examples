@@ -34,6 +34,7 @@
 #include <algine/std/CubeRenderer.h>
 #include <algine/std/QuadRenderer.h>
 #include <algine/std/animation/AnimationBlender.h>
+#include <algine/std/animation/BoneSystemManager.h>
 
 #include <algine/ext/debug.h>
 #include <algine/ext/Blur.h>
@@ -101,6 +102,7 @@ shared_ptr<Shape> shapes[shapesCount];
 Model models[modelsCount], lamps[pointLightsCount + dirLightsCount];
 Animator manAnimator, astroboyAnimator; // animator for man, astroboy models
 AnimationBlender manAnimationBlender;
+BoneSystemManager boneManager;
 
 // light
 PointLamp pointLamps[pointLightsCount];
@@ -261,15 +263,16 @@ void createDirLamp(DirLamp &result,
 
 void
 createShapes(const string &path, const string &texPath, const size_t id, const bool inverseNormals = false,
-             uint bonesPerVertex = 0) {
+             bool enableBones = false) {
     ShapeLoader shapeLoader;
     shapeLoader.setModelPath(path);
     shapeLoader.setTexturesPath(texPath);
     if (inverseNormals)
         shapeLoader.addParam(ShapeLoader::InverseNormals);
+    if (!enableBones)
+        shapeLoader.addParam(ShapeLoader::DisableBones);
     shapeLoader.addParams(ShapeLoader::Triangulate, ShapeLoader::SortByPolygonType,
             ShapeLoader::CalcTangentSpace, ShapeLoader::JoinIdenticalVertices, ShapeLoader::PrepareAllAnimations);
-    shapeLoader.getShape()->bonesPerVertex = bonesPerVertex;
     shapeLoader.load();
 
     shapes[id].reset(shapeLoader.getShape());
@@ -277,8 +280,8 @@ createShapes(const string &path, const string &texPath, const size_t id, const b
     {
         InputLayoutShapeLocations locations; // shadow shaders locations
         locations.inPosition = pointShadowShader->getLocation(ShadowShader::Vars::InPos);
-        locations.inBoneWeights = pointShadowShader->getLocation(BoneSystem::Vars::InBoneWeights);
-        locations.inBoneIds = pointShadowShader->getLocation(BoneSystem::Vars::InBoneIds);
+        locations.inBoneWeights = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
+        locations.inBoneIds = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
         shapes[id]->createInputLayout(locations); // all shadow shaders have same ids
     }
 
@@ -289,8 +292,8 @@ createShapes(const string &path, const string &texPath, const size_t id, const b
         locations.inNormal = colorShader->getLocation(ColorShader::Vars::InNormal);
         locations.inTangent = colorShader->getLocation(ColorShader::Vars::InTangent);
         locations.inBitangent = colorShader->getLocation(ColorShader::Vars::InBitangent);
-        locations.inBoneWeights = colorShader->getLocation(BoneSystem::Vars::InBoneWeights);
-        locations.inBoneIds = colorShader->getLocation(BoneSystem::Vars::InBoneIds);
+        locations.inBoneWeights = colorShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
+        locations.inBoneIds = colorShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
         shapes[id]->createInputLayout(locations);
     }
 }
@@ -390,8 +393,8 @@ void initShaders() {
         manager.define(ColorShader::Settings::TextureMapping);
         manager.define(ColorShader::Settings::SSR);
         manager.define(ColorShader::Settings::BoneSystem);
-        manager.define(BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
-        manager.define(BoneSystem::Settings::MaxBones, std::to_string(maxBones));
+        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
+        manager.define(Module::BoneSystem::Settings::MaxBones, std::to_string(maxBones));
         colorShader->fromSource(manager.makeGenerated());
         colorShader->loadActiveLocations();
 
@@ -400,8 +403,8 @@ void initShaders() {
                          algineResources "shaders/Shadow.frag.glsl",
                          algineResources "shaders/Shadow.geom.glsl");
         manager.resetDefinitions();
-        manager.define(BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
-        manager.define(BoneSystem::Settings::MaxBones, std::to_string(maxBones));
+        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
+        manager.define(Module::BoneSystem::Settings::MaxBones, std::to_string(maxBones));
         manager.define(ShadowShader::Settings::PointLightShadowMapping);
         manager.define(ShadowShader::Settings::BoneSystem);
         pointShadowShader->fromSource(manager.makeGenerated());
@@ -653,16 +656,13 @@ void initCamera() {
     camController.camera = &camera;
 }
 
-/**
- * Creating shapes and loading textures
- */
+// Creating shapes and loading textures
+#define modelsPath resources "models/"
 void initShapes() {
-    string path = resources "models/";
-
-    createShapes(path + "chess/Classic Chess small.obj", path + "chess", 0, false, 0); // classic chess
-    createShapes(path + "japanese_lamp/japanese_lamp.obj", path + "japanese_lamp", 1, true, 0); // Japanese lamp
-    createShapes(path + "man/man.fbx", path + "man", 2, false, 4); // animated man
-    createShapes(path + "astroboy/astroboy_walk.dae", path + "astroboy", 3, false, 4);
+    createShapes(modelsPath "chess/Classic Chess small.obj", modelsPath "chess", 0, false); // classic chess
+    createShapes(modelsPath "japanese_lamp/japanese_lamp.obj", modelsPath "japanese_lamp", 1, true); // Japanese lamp
+    createShapes(modelsPath "man/man.fbx", modelsPath "man", 2, false, true); // animated man
+    createShapes(modelsPath "astroboy/astroboy_walk.dae", modelsPath "astroboy", 3, false, true);
 }
 
 /**
@@ -699,6 +699,11 @@ void createModels() {
     models[2].translate();
     models[2].updateMatrix();
     models[2].setAnimator(&astroboyAnimator);
+
+    boneManager.setBindingPoint(0);
+    boneManager.setShaderPrograms({colorShader, dirShadowShader, pointShadowShader});
+    boneManager.init();
+    boneManager.initBuffers({&models[1], &models[2]});
 }
 
 /**
@@ -801,15 +806,12 @@ void updateMatrices() {
  * Draws model in depth map<br>
  * if point light, leave mat empty, but if dir light - it must be light space matrix
  */
-void drawModelDM(const Model &model, ShaderProgram *program, const glm::mat4 &mat = glm::mat4(1.0f)) {
+void drawModelDM(Model &model, ShaderProgram *program, const glm::mat4 &mat = glm::mat4(1.0f)) {
     Shape *shape = model.getShape();
     shape->inputLayouts[0]->bind();
 
-    if (shape->bonesPerVertex != 0)
-        for (int i = 0; i < shape->bonesStorage.count(); i++)
-            ShaderProgram::setMat4(program->getLocation(BoneSystem::Vars::Bones) + i, model.getBone(i));
+    boneManager.linkBuffer(&model);
 
-    program->setInt(BoneSystem::Vars::BoneAttribsPerVertex, (int)(shape->bonesPerVertex / 4 + (shape->bonesPerVertex % 4 == 0 ? 0 : 1)));
     program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model.m_transform);
     
     for (auto & mesh : shape->meshes)
@@ -826,15 +828,12 @@ inline void useNotNull(Texture2D *const tex, const uint slot) {
         Engine::defaultTexture2D()->use(slot);
 }
 
-void drawModel(const Model &model) {
+void drawModel(Model &model) {
     Shape *shape = model.getShape();
     shape->inputLayouts[1]->bind();
-    
-    if (shape->bonesPerVertex != 0)
-        for (int i = 0; i < shape->bonesStorage.count(); i++)
-            ShaderProgram::setMat4(colorShader->getLocation(BoneSystem::Vars::Bones) + i, model.getBone(i));
 
-    colorShader->setInt(BoneSystem::Vars::BoneAttribsPerVertex, shape->bonesPerVertex / 4 + (shape->bonesPerVertex % 4 == 0 ? 0 : 1));
+    boneManager.linkBuffer(&model);
+
     modelMatrix = &model.m_transform;
 	updateMatrices();
     for (auto & mesh : shape->meshes) {
@@ -976,7 +975,7 @@ void render() {
 void display() {
     // animate
     for (usize i = 0; i < modelsCount; i++) {
-        if (models[i].getShape()->bonesPerVertex != 0) {
+        if (models[i].getShape()->isBonesPresent()) {
             auto &animations = models[i].getShape()->animations;
             auto animator = models[i].getAnimator();
 
@@ -984,8 +983,11 @@ void display() {
                 animator->setAnimationIndex(j);
                 animator->animate(glfwGetTime());
             }
+
+            boneManager.writeBones(&models[i]);
         }
     }
+    Engine::defaultUniformBuffer()->bind();
 
     manAnimationBlender.blend();
 
