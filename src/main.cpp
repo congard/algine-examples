@@ -983,13 +983,13 @@ void display() {
                 animator->setAnimationIndex(j);
                 animator->animate(glfwGetTime());
             }
-
-            boneManager.writeBones(&models[i]);
         }
     }
-    Engine::defaultUniformBuffer()->bind();
 
     manAnimationBlender.blend();
+
+    boneManager.writeBonesForAll();
+    Engine::defaultUniformBuffer()->bind();
 
     // shadow rendering
     // point lights
