@@ -702,8 +702,10 @@ void createModels() {
 
     boneManager.setBindingPoint(0);
     boneManager.setShaderPrograms({colorShader, dirShadowShader, pointShadowShader});
+    boneManager.setMaxModelsCount(2);
     boneManager.init();
-    boneManager.initBuffers({&models[1], &models[2]});
+    boneManager.getBlockBufferStorage().bind();
+    boneManager.addModels({&models[1], &models[2]});
 }
 
 /**
@@ -988,6 +990,7 @@ void display() {
 
     manAnimationBlender.blend();
 
+    boneManager.getBlockBufferStorage().bind();
     boneManager.writeBonesForAll();
     Engine::defaultUniformBuffer()->bind();
 
@@ -1039,7 +1042,7 @@ int main() {
     std::thread animate_scene_th(animate_scene);
 
     double currentTime, previousTime = glfwGetTime();
-    size_t frameCount = 0;
+    size_t frameCount = 0, frames = 0, passes = 0;
     while (!glfwWindowShouldClose(window)) {
         currentTime = glfwGetTime();
         frameCount++;
@@ -1047,6 +1050,8 @@ int main() {
         if (currentTime - previousTime >= 1.0) {
             // Display the average frame count and the average time for 1 frame
             std::cout << frameCount << " (" << (frameCount / (currentTime - previousTime)) << ") FPS, " << ((currentTime - previousTime) / frameCount) * 1000 << " ms\n";
+            frames += frameCount;
+            passes++;
             frameCount = 0;
             previousTime = currentTime;
         }
@@ -1056,6 +1061,8 @@ int main() {
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
+
+    cout << "Average: " << frames / (float) passes << " fps; " << (passes / (float) frames) * 1000.0f <<  " ms\n";
 
     animate_scene_th.detach();
     recycleAll();
