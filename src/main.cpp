@@ -30,7 +30,7 @@
 #include <algine/std/model/ShapeLoader.h>
 #include <algine/std/lighting/DirLamp.h>
 #include <algine/std/lighting/PointLamp.h>
-#include <algine/std/lighting/Manager.h>
+#include <algine/std/lighting/LightingManager.h>
 #include <algine/std/CubeRenderer.h>
 #include <algine/std/QuadRenderer.h>
 #include <algine/std/animation/AnimationBlender.h>
@@ -58,9 +58,6 @@
 using namespace algine;
 using namespace std;
 using namespace tulz;
-
-using Lighting::PointLamp;
-using Lighting::DirLamp;
 
 constexpr bool fullscreen = false;
 constexpr uint shadowMapResolution = 1024;
@@ -107,7 +104,7 @@ BoneSystemManager boneManager;
 // light
 PointLamp pointLamps[pointLightsCount];
 DirLamp dirLamps[dirLightsCount];
-Lighting::Manager lightManager;
+LightingManager lightManager;
 
 shared_ptr<CubeRenderer> skyboxRenderer;
 shared_ptr<QuadRenderer> quadRenderer;
