@@ -97,7 +97,6 @@ const glm::mat4 *modelMatrix; // model matrix stored in Model::transformation
 // models
 shared_ptr<Shape> shapes[shapesCount];
 Model models[modelsCount], lamps[pointLightsCount + dirLightsCount];
-Animator manAnimator, astroboyAnimator; // animator for man, astroboy models
 AnimationBlender manAnimationBlender;
 BoneSystemManager boneManager;
 
@@ -676,26 +675,21 @@ void initShapes() {
  */
 void createModels() {
     // classic chess
-    models[0] = Model(Rotator::RotatorTypeSimple);
     models[0].setShape(shapes[0].get());
 
     // animated man
-    manAnimator = Animator(shapes[2].get(), "Armature|Run");
     manAnimationBlender.setShape(shapes[2].get());
     manAnimationBlender.setFactor(0.25f);
     manAnimationBlender.setLhsAnim(0);
     manAnimationBlender.setRhsAnim(1);
-    models[1] = Model(Rotator::RotatorTypeSimple);
     models[1].setShape(shapes[2].get());
+    models[1].getAnimator()->setAnimation("Armature|Run");
     models[1].setX(-2.0f);
     models[1].translate();
     models[1].updateMatrix();
-    models[1].setAnimator(&manAnimator);
     models[1].setBones(&manAnimationBlender.bones());
 
     // animated astroboy
-    astroboyAnimator = Animator(shapes[3].get());
-    models[2] = Model(Rotator::RotatorTypeSimple);
     models[2].setShape(shapes[3].get());
     models[2].setPitch(glm::radians(-90.0f));
     models[2].rotate();
@@ -704,7 +698,6 @@ void createModels() {
     models[2].setX(2.0f);
     models[2].translate();
     models[2].updateMatrix();
-    models[2].setAnimator(&astroboyAnimator);
 
     boneManager.setBindingPoint(0);
     boneManager.setShaderPrograms({colorShader, dirShadowShader, pointShadowShader});
@@ -718,14 +711,12 @@ void createModels() {
  * Creating light sources
  */
 void initLamps() {
-    lamps[0] = Model(Rotator::RotatorTypeSimple);
     lamps[0].setShape(shapes[1].get());
     pointLamps[0].mptr = &lamps[0];
     createPointLamp(pointLamps[0], glm::vec3(0.0f, 8.0f, 15.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0);
     lamps[0].translate();
     lamps[0].updateMatrix();
 
-    lamps[1] = Model(Rotator::RotatorTypeSimple);
     lamps[1].setShape(shapes[1].get());
     dirLamps[0].mptr = &lamps[1];
     createDirLamp(dirLamps[0],
