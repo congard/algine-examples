@@ -379,24 +379,21 @@ void initShaders() {
         manager.addIncludePath(Path::join(Path::getWorkingDirectory(), algineResources));
         manager.addIncludePath(Path::join(Path::getWorkingDirectory(), resources "shaders"));
 
-        // TODO: add manager.define(string, number)
         // color shader
         manager.fromFile(algineResources "templates/ColorShader/vertex.glsl",
                          algineResources "templates/ColorShader/fragment.glsl");
         manager.define(Module::Material::Settings::IncludeCustomProps);
         manager.define(Module::Lighting::Settings::Attenuation);
         manager.define(Module::Lighting::Settings::ShadowMappingPCF);
-        manager.define(Module::Lighting::Settings::PointLightsLimit,
-                to_string(lightManager.getLightsLimit(Light::Type::Point)));
-        manager.define(Module::Lighting::Settings::DirLightsLimit,
-                to_string(lightManager.getLightsLimit(Light::Type::Dir)));
+        manager.define(Module::Lighting::Settings::PointLightsLimit, lightManager.getLightsLimit(Light::Type::Point));
+        manager.define(Module::Lighting::Settings::DirLightsLimit, lightManager.getLightsLimit(Light::Type::Dir));
         manager.define(Module::NormalMapping::Settings::FromMap);
         manager.define(ColorShader::Settings::Lighting);
         manager.define(ColorShader::Settings::TextureMapping);
         manager.define(ColorShader::Settings::SSR);
         manager.define(ColorShader::Settings::BoneSystem);
-        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, to_string(maxBoneAttribsPerVertex));
-        manager.define(Module::BoneSystem::Settings::MaxBones, to_string(maxBones));
+        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
+        manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
         colorShader->fromSource(manager.makeGenerated());
         colorShader->loadActiveLocations();
 
@@ -405,8 +402,8 @@ void initShaders() {
                          algineResources "shaders/Shadow.frag.glsl",
                          algineResources "shaders/Shadow.geom.glsl");
         manager.resetDefinitions();
-        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
-        manager.define(Module::BoneSystem::Settings::MaxBones, std::to_string(maxBones));
+        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
+        manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
         manager.define(ShadowShader::Settings::PointLightShadowMapping);
         manager.define(ShadowShader::Settings::BoneSystem);
         pointShadowShader->fromSource(manager.makeGenerated());
@@ -451,7 +448,7 @@ void initShaders() {
         manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                          algineResources "shaders/Blur.frag.glsl");
         manager.resetDefinitions();
-        manager.define(BlurShader::Settings::KernelRadius, std::to_string(bloomBlurKernelRadius));
+        manager.define(BlurShader::Settings::KernelRadius, bloomBlurKernelRadius);
         manager.define(BlurShader::Settings::OutputType, "vec3");
         manager.define(BlurShader::Settings::TexComponent, "rgb");
         manager.define(BlurShader::Settings::Horizontal);
@@ -468,7 +465,7 @@ void initShaders() {
         manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                          algineResources "shaders/Blur.frag.glsl");
         manager.resetDefinitions();
-        manager.define(BlurShader::Settings::KernelRadius, std::to_string(dofBlurKernelRadius));
+        manager.define(BlurShader::Settings::KernelRadius, dofBlurKernelRadius);
         manager.define(BlurShader::Settings::OutputType, "vec3");
         manager.define(BlurShader::Settings::TexComponent, "rgb");
         manager.define(BlurShader::Settings::Horizontal);
@@ -484,7 +481,7 @@ void initShaders() {
         // CoC blur shaders
         manager.resetGenerated();
         manager.resetDefinitions();
-        manager.define(BlurShader::Settings::KernelRadius, std::to_string(cocBlurKernelRadius));
+        manager.define(BlurShader::Settings::KernelRadius, cocBlurKernelRadius);
         manager.define(BlurShader::Settings::OutputType, "float");
         manager.define(BlurShader::Settings::TexComponent, "r");
         manager.define(BlurShader::Settings::Horizontal);
