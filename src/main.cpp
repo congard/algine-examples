@@ -218,14 +218,14 @@ void createPointLamp(PointLamp &result, const glm::vec3 &pos, const glm::vec3 &c
     result.updateMatrix();
     result.initShadows(shadowMapResolution, shadowMapResolution);
 
-    colorShader->bind();
-    lightManager.transmitter.setColor(result, id);
-    lightManager.transmitter.setKc(result, id);
-    lightManager.transmitter.setKl(result, id);
-    lightManager.transmitter.setKq(result, id);
-    lightManager.transmitter.setFarPlane(result, id);
-    lightManager.transmitter.setBias(result, id);
-    colorShader->unbind();
+    lightManager.bindBuffer();
+    lightManager.writeColor(result, id);
+    lightManager.writeKc(result, id);
+    lightManager.writeKl(result, id);
+    lightManager.writeKq(result, id);
+    lightManager.writeFarPlane(result, id);
+    lightManager.writeBias(result, id);
+    lightManager.unbindBuffer();
 }
 
 void createDirLamp(DirLamp &result,
@@ -247,15 +247,15 @@ void createDirLamp(DirLamp &result,
     result.updateMatrix();
     result.initShadows(shadowMapResolution, shadowMapResolution);
 
-    colorShader->bind();
-    lightManager.transmitter.setColor(result, id);
-    lightManager.transmitter.setKc(result, id);
-    lightManager.transmitter.setKl(result, id);
-    lightManager.transmitter.setKq(result, id);
-    lightManager.transmitter.setMinBias(result, id);
-    lightManager.transmitter.setMaxBias(result, id);
-    lightManager.transmitter.setLightMatrix(result, id);
-    colorShader->unbind();
+    lightManager.bindBuffer();
+    lightManager.writeColor(result, id);
+    lightManager.writeKc(result, id);
+    lightManager.writeKl(result, id);
+    lightManager.writeKq(result, id);
+    lightManager.writeMinBias(result, id);
+    lightManager.writeMaxBias(result, id);
+    lightManager.writeLightMatrix(result, id);
+    lightManager.unbindBuffer();
 }
 
 void
@@ -365,10 +365,12 @@ void initShaders() {
                           bloomSearchShader, bloomBlurHorShader, bloomBlurVertShader,
                           cocBlurHorShader, cocBlurVertShader, blendShader);
 
-    lightManager.setDirLightsLimit(4);
-    lightManager.setPointLightsLimit(4);
-    lightManager.setPointLightsMapInitialSlot(6);
-    lightManager.setDirLightsMapInitialSlot(lightManager.pointLightsInitialSlot + lightManager.pointLightsLimit);
+    lightManager.setLightsLimit(4, Light::Type::Dir);
+    lightManager.setLightsLimit(4, Light::Type::Point);
+    lightManager.setLightsMapInitialSlot(6, Light::Type::Point);
+    lightManager.setLightsMapInitialSlot(
+            lightManager.getLightsMapInitialSlot(Light::Type::Point) + lightManager.getLightsLimit(Light::Type::Point),
+            Light::Type::Dir);
 
     std::cout << "Compiling algine shaders\n";
 
@@ -377,21 +379,24 @@ void initShaders() {
         manager.addIncludePath(Path::join(Path::getWorkingDirectory(), algineResources));
         manager.addIncludePath(Path::join(Path::getWorkingDirectory(), resources "shaders"));
 
+        // TODO: add manager.define(string, number)
         // color shader
         manager.fromFile(algineResources "templates/ColorShader/vertex.glsl",
                          algineResources "templates/ColorShader/fragment.glsl");
         manager.define(Module::Material::Settings::IncludeCustomProps);
         manager.define(Module::Lighting::Settings::Attenuation);
         manager.define(Module::Lighting::Settings::ShadowMappingPCF);
-        manager.define(Module::Lighting::Settings::PointLightsLimit, std::to_string(lightManager.pointLightsLimit));
-        manager.define(Module::Lighting::Settings::DirLightsLimit, std::to_string(lightManager.dirLightsLimit));
+        manager.define(Module::Lighting::Settings::PointLightsLimit,
+                to_string(lightManager.getLightsLimit(Light::Type::Point)));
+        manager.define(Module::Lighting::Settings::DirLightsLimit,
+                to_string(lightManager.getLightsLimit(Light::Type::Dir)));
         manager.define(Module::NormalMapping::Settings::FromMap);
         manager.define(ColorShader::Settings::Lighting);
         manager.define(ColorShader::Settings::TextureMapping);
         manager.define(ColorShader::Settings::SSR);
         manager.define(ColorShader::Settings::BoneSystem);
-        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, std::to_string(maxBoneAttribsPerVertex));
-        manager.define(Module::BoneSystem::Settings::MaxBones, std::to_string(maxBones));
+        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, to_string(maxBoneAttribsPerVertex));
+        manager.define(Module::BoneSystem::Settings::MaxBones, to_string(maxBones));
         colorShader->fromSource(manager.makeGenerated());
         colorShader->loadActiveLocations();
 
@@ -508,8 +513,16 @@ void initShaders() {
 
     lightManager.setLightShader(colorShader);
     lightManager.setPointLightShadowShader(pointShadowShader);
-    lightManager.indexDirLightLocations();
-    lightManager.indexPointLightLocations();
+    lightManager.setBindingPoint(1);
+    lightManager.init();
+
+    lightManager.bindBuffer();
+    lightManager.writePointLightsCount(pointLightsCount);
+    lightManager.writeDirLightsCount(dirLightsCount);
+    lightManager.writeShadowOpacity(shadowOpacity);
+    lightManager.writeShadowDiskRadiusK(diskRadius_k);
+    lightManager.writeShadowDiskRadiusMin(diskRadius_min);
+    lightManager.unbindBuffer();
 
     skyboxRenderer = make_shared<CubeRenderer>(skyboxShader->getLocation(CubemapShader::Vars::InPos));
     quadRenderer = make_shared<QuadRenderer>(0); // inPosLocation in quad shader is 0
@@ -608,7 +621,6 @@ void initShaders() {
     colorShader->setInt(Module::Material::Vars::NormalTex, 3);
     colorShader->setInt(Module::Material::Vars::ReflectionStrengthTex, 4);
     colorShader->setInt(Module::Material::Vars::JitterTex, 5);
-    colorShader->setFloat(Module::Lighting::Vars::ShadowOpacity, shadowOpacity);
 
     // configuring CubemapShader
     skyboxShader->bind();
@@ -732,17 +744,10 @@ void initShadowMaps() {
 
     lightManager.configureShadowMapping();
     for (usize i = 0; i < pointLightsCount; i++)
-        lightManager.transmitter.setShadowMap(pointLamps[i], i);
+        lightManager.pushShadowMap(pointLamps[i], i);
     for (usize i = 0; i < dirLightsCount; i++)
-        lightManager.transmitter.setShadowMap(dirLamps[i], i);
+        lightManager.pushShadowMap(dirLamps[i], i);
 
-    colorShader->unbind();
-}
-
-void initShadowCalculation() {
-    colorShader->bind();
-    colorShader->setFloat(Module::Lighting::Vars::ShadowDiskRadiusK, diskRadius_k);
-    colorShader->setFloat(Module::Lighting::Vars::ShadowDiskRadiusMin, diskRadius_min);
     colorShader->unbind();
 }
 
@@ -774,13 +779,13 @@ void recycleAll() {
 }
 
 void sendLampsData() {
-    lightManager.transmitter.setPointLightsCount(pointLightsCount);
-    lightManager.transmitter.setDirLightsCount(dirLightsCount);
+    lightManager.bindBuffer();
     colorShader->setVec3(ColorShader::Vars::CameraPos, camera.getPos());
     for (size_t i = 0; i < pointLightsCount; i++)
-        lightManager.transmitter.setPos(pointLamps[i], i);
+        lightManager.writePos(pointLamps[i], i);
     for (size_t i = 0; i < dirLightsCount; i++)
-        lightManager.transmitter.setPos(dirLamps[i], i);
+        lightManager.writePos(dirLamps[i], i);
+    lightManager.unbindBuffer();
 }
 
 #define value *
@@ -861,8 +866,8 @@ void renderToDepthCubemap(const uint index) {
     pointLamps[index].updateMatrix();
     pointLamps[index].shadowMapFb->clearDepthBuffer();
 
-    lightManager.transmitter.setShadowShaderPos(pointLamps[index]);
-	lightManager.transmitter.setShadowShaderMatrices(pointLamps[index]);
+    lightManager.pushShadowShaderPos(pointLamps[index]);
+	lightManager.pushShadowShaderMatrices(pointLamps[index]);
 
 	// drawing models
     for (size_t i = 0; i < modelsCount; i++)
@@ -995,7 +1000,7 @@ void display() {
     // point lights
     pointShadowShader->bind();
 	for (uint i = 0; i < pointLightsCount; i++) {
-	    lightManager.transmitter.setShadowShaderFarPlane(pointLamps[i]);
+	    lightManager.pushShadowShaderFarPlane(pointLamps[i]);
         renderToDepthCubemap(i);
     }
 
@@ -1031,7 +1036,6 @@ int main() {
     createModels();
     initLamps();
     initShadowMaps();
-    initShadowCalculation();
     initDOF();
     
     mouseEventListener.setCallback(mouse_callback);
