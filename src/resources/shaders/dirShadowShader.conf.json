@@ -1,0 +1,25 @@
+{
+    "baseIncludePaths": {
+        "fragment": "lib/algine/resources/shaders",
+        "vertex": "lib/algine/resources/shaders"
+    },
+    "definitions": {
+        "common": {
+            "MAX_BONES": "64",
+            "MAX_BONE_ATTRIBS_PER_VERTEX": "1"
+        }
+    },
+    "fragment": "lib/algine/resources/shaders/Shadow.frag.glsl",
+    "fromSources": false,
+    "includePaths": [
+        "lib/algine/resources/",
+        "src/resources/shaders"
+    ],
+    "params": {
+        "common": [
+            "ALGINE_BONE_SYSTEM",
+            "ALGINE_SHADOW_MAPPING_TYPE_DIR_LIGHTING"
+        ]
+    },
+    "vertex": "lib/algine/resources/shaders/Shadow.vert.glsl"
+}
