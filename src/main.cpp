@@ -39,9 +39,7 @@
 #include <algine/ext/debug.h>
 #include <algine/ext/Blur.h>
 #include <algine/ext/event/MouseEvent.h>
-#include <algine/ext/constants/BlurShader.h>
 #include <algine/ext/constants/SSRShader.h>
-#include <algine/ext/constants/BlendBloom.h>
 #include <algine/ext/constants/COCShader.h>
 #include <algine/ext/constants/BlendDOF.h>
 
@@ -49,37 +47,19 @@
 #include <algine/constants/ShadowShader.h>
 #include <algine/constants/CubemapShader.h>
 #include <algine/constants/Material.h>
-#include <algine/constants/Lighting.h>
-#include <algine/constants/NormalMapping.h>
 
 #include "ColorShader.h"
 #include "BlendShader.h"
+#include "constants.h"
 
 using namespace algine;
 using namespace std;
 using namespace tulz;
 
 constexpr bool fullscreen = false;
-constexpr uint shadowMapResolution = 1024;
 
-constexpr float bloomK = 0.5f;
-constexpr float dofK = 0.5f;
-constexpr uint bloomBlurKernelRadius = 15;
-constexpr uint bloomBlurKernelSigma = 16;
-constexpr uint dofBlurKernelRadius = 2;
-constexpr uint dofBlurKernelSigma = 4;
-constexpr uint cocBlurKernelRadius = 2;
-constexpr uint cocBlurKernelSigma = 6;
-
-constexpr uint pointLightsCount = 1;
-constexpr uint dirLightsCount = 1;
-constexpr uint maxBoneAttribsPerVertex = 1;
-constexpr uint maxBones = 64;
 constexpr uint shapesCount = 4;
 constexpr uint modelsCount = 3;
-
-#define algineResources "lib/algine/resources/"
-#define resources "src/resources/"
 
 // Function prototypes
 void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int mode);
@@ -364,8 +344,8 @@ void initShaders() {
                           bloomSearchShader, bloomBlurHorShader, bloomBlurVertShader,
                           cocBlurHorShader, cocBlurVertShader, blendShader);
 
-    lightManager.setLightsLimit(4, Light::Type::Dir);
-    lightManager.setLightsLimit(4, Light::Type::Point);
+    lightManager.setLightsLimit(dirLightsLimit, Light::Type::Dir);
+    lightManager.setLightsLimit(pointLightsLimit, Light::Type::Point);
     lightManager.setLightsMapInitialSlot(6, Light::Type::Point);
     lightManager.setLightsMapInitialSlot(
             lightManager.getLightsMapInitialSlot(Light::Type::Point) + lightManager.getLightsLimit(Light::Type::Point),
@@ -373,137 +353,27 @@ void initShaders() {
 
     std::cout << "Compiling algine shaders\n";
 
-    {
+    auto shaderFromConfig = [](ShaderProgram *program, const string &configName) {
         ShaderManager manager;
-        manager.addIncludePath(Path::join(Path::getWorkingDirectory(), algineResources));
-        manager.addIncludePath(Path::join(Path::getWorkingDirectory(), resources "shaders"));
+        manager.loadConfig(resources "shaders/" + configName + ".conf.json");
+        program->fromSource(manager.makeGenerated());
+        program->loadActiveLocations();
+    };
 
-        // color shader
-        manager.fromFile(algineResources "templates/ColorShader/vertex.glsl",
-                         algineResources "templates/ColorShader/fragment.glsl");
-        manager.define(Module::Material::Settings::IncludeCustomProps);
-        manager.define(Module::Lighting::Settings::Attenuation);
-        manager.define(Module::Lighting::Settings::ShadowMappingPCF);
-        manager.define(Module::Lighting::Settings::PointLightsLimit, lightManager.getLightsLimit(Light::Type::Point));
-        manager.define(Module::Lighting::Settings::DirLightsLimit, lightManager.getLightsLimit(Light::Type::Dir));
-        manager.define(Module::NormalMapping::Settings::FromMap);
-        manager.define(ColorShader::Settings::Lighting);
-        manager.define(ColorShader::Settings::TextureMapping);
-        manager.define(ColorShader::Settings::SSR);
-        manager.define(ColorShader::Settings::BoneSystem);
-        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
-        manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
-        colorShader->fromSource(manager.makeGenerated());
-        colorShader->loadActiveLocations();
-
-        // point shadow shader
-        manager.fromFile(algineResources "shaders/Shadow.vert.glsl",
-                         algineResources "shaders/Shadow.frag.glsl",
-                         algineResources "shaders/Shadow.geom.glsl");
-        manager.resetDefinitions();
-        manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
-        manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
-        manager.define(ShadowShader::Settings::PointLightShadowMapping);
-        manager.define(ShadowShader::Settings::BoneSystem);
-        pointShadowShader->fromSource(manager.makeGenerated());
-        pointShadowShader->loadActiveLocations();
-
-        // dir shadow shader
-        ShadersInfo shadowShaderTemplate = manager.getTemplate();
-        shadowShaderTemplate.geometry = std::string(); // we don't need geometry shader for dir light shadows
-        manager.fromSource(shadowShaderTemplate);
-        manager.removeDefinition(ShadowShader::Settings::PointLightShadowMapping);
-        manager.define(ShadowShader::Settings::DirLightShadowMapping);
-        dirShadowShader->fromSource(manager.makeGenerated());
-        dirShadowShader->loadActiveLocations();
-
-        // SSR shader
-        ssrShader->fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                            algineResources "shaders/SSR.frag.glsl");
-        ssrShader->loadActiveLocations();
-
-        // bloom search shader
-        bloomSearchShader->fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                                    algineResources "shaders/BloomSearch.frag.glsl");
-        bloomSearchShader->loadActiveLocations();
-
-        // DOF CoC shader
-        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                         algineResources "shaders/DOFCOC.frag.glsl");
-        manager.resetDefinitions();
-        manager.define(COCShader::Settings::Cinematic);
-        dofCoCShader->fromSource(manager.makeGenerated());
-        dofCoCShader->loadActiveLocations();
-
-        // blend shader
-        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                         algineResources "templates/Blend.frag.glsl");
-        manager.resetDefinitions();
-        manager.define(Module::BlendBloom::Settings::BloomAdd);
-        blendShader->fromSource(manager.makeGenerated());
-        blendShader->loadActiveLocations();
-
-        // bloom blur shaders
-        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                         algineResources "shaders/Blur.frag.glsl");
-        manager.resetDefinitions();
-        manager.define(BlurShader::Settings::KernelRadius, bloomBlurKernelRadius);
-        manager.define(BlurShader::Settings::OutputType, "vec3");
-        manager.define(BlurShader::Settings::TexComponent, "rgb");
-        manager.define(BlurShader::Settings::Horizontal);
-        bloomBlurHorShader->fromSource(manager.makeGenerated());
-        bloomBlurHorShader->loadActiveLocations();
-
-        manager.resetGenerated();
-        manager.removeDefinition(BlurShader::Settings::Horizontal);
-        manager.define(BlurShader::Settings::Vertical);
-        bloomBlurVertShader->fromSource(manager.makeGenerated());
-        bloomBlurVertShader->loadActiveLocations();
-
-        // dof blur shaders
-        manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                         algineResources "shaders/Blur.frag.glsl");
-        manager.resetDefinitions();
-        manager.define(BlurShader::Settings::KernelRadius, dofBlurKernelRadius);
-        manager.define(BlurShader::Settings::OutputType, "vec3");
-        manager.define(BlurShader::Settings::TexComponent, "rgb");
-        manager.define(BlurShader::Settings::Horizontal);
-        dofBlurHorShader->fromSource(manager.makeGenerated());
-        dofBlurHorShader->loadActiveLocations();
-
-        manager.resetGenerated();
-        manager.removeDefinition(BlurShader::Settings::Horizontal);
-        manager.define(BlurShader::Settings::Vertical);
-        dofBlurVertShader->fromSource(manager.makeGenerated());
-        dofBlurVertShader->loadActiveLocations();
-
-        // CoC blur shaders
-        manager.resetGenerated();
-        manager.resetDefinitions();
-        manager.define(BlurShader::Settings::KernelRadius, cocBlurKernelRadius);
-        manager.define(BlurShader::Settings::OutputType, "float");
-        manager.define(BlurShader::Settings::TexComponent, "r");
-        manager.define(BlurShader::Settings::Horizontal);
-        cocBlurHorShader->fromSource(manager.makeGenerated());
-        cocBlurHorShader->loadActiveLocations();
-
-        manager.resetGenerated();
-        manager.removeDefinition(BlurShader::Settings::Horizontal);
-        manager.define(BlurShader::Settings::Vertical);
-        cocBlurVertShader->fromSource(manager.makeGenerated());
-        cocBlurVertShader->loadActiveLocations();
-
-        // cubemap shader
-        manager.fromFile(algineResources "shaders/basic/Cubemap.vert.glsl",
-                         algineResources "shaders/basic/Cubemap.frag.glsl");
-        manager.resetDefinitions();
-        manager.define(CubemapShader::Settings::SpherePositions);
-        manager.define(CubemapShader::Settings::ColorOut, "0"); // TODO: create constants
-        manager.define(CubemapShader::Settings::PosOut, "2");
-        manager.define(CubemapShader::Settings::OutputType, "vec3");
-        skyboxShader->fromSource(manager.makeGenerated());
-        skyboxShader->loadActiveLocations();
-    }
+    shaderFromConfig(colorShader, "colorShader");
+    shaderFromConfig(pointShadowShader, "pointShadowShader");
+    shaderFromConfig(dirShadowShader, "dirShadowShader");
+    shaderFromConfig(dofCoCShader, "dofCocShader");
+    shaderFromConfig(blendShader, "blendShader");
+    shaderFromConfig(bloomBlurHorShader, "bloomBlurShader.hor");
+    shaderFromConfig(bloomBlurVertShader, "bloomBlurShader.vert");
+    shaderFromConfig(dofBlurHorShader, "dofBlurShader.hor");
+    shaderFromConfig(dofBlurVertShader, "dofBlurShader.vert");
+    shaderFromConfig(cocBlurHorShader, "cocBlurShader.hor");
+    shaderFromConfig(cocBlurVertShader, "cocBlurShader.vert");
+    shaderFromConfig(skyboxShader, "cubeMapShader");
+    shaderFromConfig(ssrShader, "ssrShader");
+    shaderFromConfig(bloomSearchShader, "bloomSearchShader");
 
     std::cout << "Compilation done\n";
 
