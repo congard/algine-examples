@@ -21,9 +21,9 @@ else()
     include_directories(lib/glfw/include)
 endif()
 
-add_executable(algine_examples src/main.cpp src/ColorShader.h src/BlendShader.h)
+add_executable(examples src/main.cpp src/ColorShader.h src/BlendShader.h src/constants.h)
 
-target_link_libraries(algine_examples algine glfw pthread)
+target_link_libraries(examples algine glfw pthread)
 
 if (WIN32)
     if (NOT ALGINE_LINK_LIBS_STATICALLY)
@@ -65,3 +65,7 @@ if (WIN32)
                     ${CMAKE_CURRENT_BINARY_DIR}/${libglfw})
     endif()
 endif()
+
+add_executable(ShaderConfigGenerator src/ShaderConfigGenerator.cpp src/constants.h)
+
+target_link_libraries(ShaderConfigGenerator algine)
