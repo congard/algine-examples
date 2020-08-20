@@ -285,10 +285,10 @@ createShapes(const string &path, const string &texPath, const size_t id, const b
  * Init GL: creating window, etc.
  */
 void initGL() {
-    std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
+    cout << "Starting GLFW context, OpenGL 3.3" << endl;
     // Init GLFW
     if (!glfwInit())
-        std::cout << "GLFW init failed";
+        cout << "GLFW init failed";
     // Set all the required options for GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -315,13 +315,13 @@ void initGL() {
     glewExperimental = GL_TRUE;
     // Initialize GLEW to setup the OpenGL Function pointers
     if (glewInit() != GLEW_NO_ERROR)
-        std::cout << "GLEW init failed\n";
+        cout << "GLEW init failed\n";
 
 #ifdef DEBUG_OUTPUT
     enableGLDebugOutput();
 #endif
 
-    std::cout << "Your GPU vendor: " << Engine::getGPUVendor() << "\nYour GPU renderer: " << Engine::getGPURenderer() << "\n";
+    cout << "Your GPU vendor: " << Engine::getGPUVendor() << "\nYour GPU renderer: " << Engine::getGPURenderer() << "\n";
 
     Engine::init();
     Engine::enableDepthTest();
@@ -351,11 +351,11 @@ void initShaders() {
             lightManager.getLightsMapInitialSlot(Light::Type::Point) + lightManager.getLightsLimit(Light::Type::Point),
             Light::Type::Dir);
 
-    std::cout << "Compiling algine shaders\n";
+    cout << "Compiling algine shaders\n";
 
     auto shaderFromConfig = [](ShaderProgram *program, const string &configName) {
         ShaderManager manager;
-        manager.loadConfig(resources "shaders/" + configName + ".conf.json");
+        manager.deserializeFromFile(resources "shaders/" + configName + ".conf.json");
         program->fromSource(manager.makeGenerated());
         program->loadActiveLocations();
     };
@@ -375,7 +375,7 @@ void initShaders() {
     shaderFromConfig(ssrShader, "ssrShader");
     shaderFromConfig(bloomSearchShader, "bloomSearchShader");
 
-    std::cout << "Compilation done\n";
+    cout << "Compilation done\n";
 
     lightManager.setLightShader(colorShader);
     lightManager.setPointLightShadowShader(pointShadowShader);
@@ -878,7 +878,7 @@ void display() {
 void animate_scene() {
     glm::mat3 rotate = glm::mat3(glm::rotate(glm::mat4(), glm::radians(0.01f), glm::vec3(0, 1, 0)));
     while (true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(1));
         pointLamps[0].setPos(pointLamps[0].m_pos * rotate);
         pointLamps[0].translate();
         pointLamps[0].mptr->updateMatrix();
@@ -898,7 +898,7 @@ int main() {
     
     mouseEventListener.setCallback(mouse_callback);
 
-    std::thread animate_scene_th(animate_scene);
+    thread animate_scene_th(animate_scene);
 
     double currentTime, previousTime = glfwGetTime();
     size_t frameCount = 0, frames = 0, passes = 0;
@@ -908,7 +908,7 @@ int main() {
         // If a second has passed.
         if (currentTime - previousTime >= 1.0) {
             // Display the average frame count and the average time for 1 frame
-            std::cout << frameCount << " (" << (frameCount / (currentTime - previousTime)) << ") FPS, " << ((currentTime - previousTime) / frameCount) * 1000 << " ms\n";
+            cout << frameCount << " (" << (frameCount / (currentTime - previousTime)) << ") FPS, " << ((currentTime - previousTime) / frameCount) * 1000 << " ms\n";
             frames += frameCount;
             passes++;
             frameCount = 0;
@@ -927,7 +927,7 @@ int main() {
     recycleAll();
     glfwTerminate(); // Terminate GLFW, clearing any resources allocated by GLFW.
     
-    std::cout << "Exit with exit code 0\n";
+    cout << "Exit with exit code 0\n";
 
     return 0;
 }
@@ -954,7 +954,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
         TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), pPixelsData, 3);
         pFramebuffer->unbind();
 
-        std::cout << "Depth map data saved\n";
+        cout << "Depth map data saved\n";
     } else if (keyPressed(GLFW_KEY_ESCAPE)) {
         glfwSetWindowShouldClose(glfwWindow, GL_TRUE);
     } else if (action == GLFW_REPEAT || action == GLFW_RELEASE) {
