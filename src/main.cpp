@@ -16,7 +16,7 @@
 
 #include <algine/core/Engine.h>
 #include <algine/core/shader/ShaderProgram.h>
-#include <algine/core/shader/ShaderManager.h>
+#include <algine/core/shader/ShaderProgramManager.h>
 #include <algine/core/Framebuffer.h>
 #include <algine/core/Renderbuffer.h>
 #include <algine/core/texture/Texture2D.h>
@@ -354,7 +354,7 @@ void initShaders() {
     cout << "Compiling algine shaders\n";
 
     auto shaderFromConfig = [](ShaderProgram *program, const string &configName) {
-        ShaderManager manager;
+        ShaderProgramManager manager;
         manager.importFromFile(resources "shaders/" + configName + ".conf.json");
         program->fromSource(manager.makeGenerated());
         program->loadActiveLocations();

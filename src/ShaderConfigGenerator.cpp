@@ -1,4 +1,4 @@
-#include <algine/core/shader/ShaderManager.h>
+#include <algine/core/shader/ShaderProgramManager.h>
 
 #include <algine/core/JsonHelper.h>
 
@@ -28,13 +28,13 @@ struct ShaderPair {
     string hor, vert;
 };
 
-inline void setIncludePaths(ShaderManager &manager) {
+inline void setIncludePaths(ShaderProgramManager &manager) {
     manager.addIncludePath(algineResources);
     manager.addIncludePath(resources "shaders");
 }
 
 string colorShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -57,7 +57,7 @@ string colorShader() {
 }
 
 string pointShadowShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -74,7 +74,7 @@ string pointShadowShader() {
 }
 
 string dirShadowShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -90,7 +90,7 @@ string dirShadowShader() {
 }
 
 string dofCocShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -102,7 +102,7 @@ string dofCocShader() {
 }
 
 string blendShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -114,7 +114,7 @@ string blendShader() {
 }
 
 ShaderPair bloomBlurShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -137,7 +137,7 @@ ShaderPair bloomBlurShader() {
 }
 
 ShaderPair dofBlurShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -160,7 +160,7 @@ ShaderPair dofBlurShader() {
 }
 
 ShaderPair cocBlurShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -183,7 +183,7 @@ ShaderPair cocBlurShader() {
 }
 
 string cubeMapShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     setIncludePaths(manager);
 
@@ -198,7 +198,7 @@ string cubeMapShader() {
 }
 
 string ssrShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                      algineResources "shaders/SSR.frag.glsl");
@@ -207,7 +207,7 @@ string ssrShader() {
 }
 
 string bloomSearchShader() {
-    ShaderManager manager;
+    ShaderProgramManager manager;
 
     manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                      algineResources "shaders/BloomSearch.frag.glsl");
