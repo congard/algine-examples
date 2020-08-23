@@ -53,7 +53,7 @@ string colorShader() {
     manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
     manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 string pointShadowShader() {
@@ -70,7 +70,7 @@ string pointShadowShader() {
     manager.define(ShadowShader::Settings::PointLightShadowMapping);
     manager.define(ShadowShader::Settings::BoneSystem);
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 string dirShadowShader() {
@@ -86,7 +86,7 @@ string dirShadowShader() {
     manager.define(ShadowShader::Settings::DirLightShadowMapping);
     manager.define(ShadowShader::Settings::BoneSystem);
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 string dofCocShader() {
@@ -98,7 +98,7 @@ string dofCocShader() {
                      algineResources "shaders/DOFCOC.frag.glsl");
     manager.define(COCShader::Settings::Cinematic);
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 string blendShader() {
@@ -110,7 +110,7 @@ string blendShader() {
                      algineResources "templates/Blend.frag.glsl");
     manager.define(Module::BlendBloom::Settings::BloomAdd);
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 ShaderPair bloomBlurShader() {
@@ -126,12 +126,12 @@ ShaderPair bloomBlurShader() {
     manager.define(BlurShader::Settings::Horizontal);
 
     ShaderPair result;
-    result.hor = manager.serialize().toString();
+    result.hor = manager.dump().toString();
 
     manager.removeDefinition(BlurShader::Settings::Horizontal);
     manager.define(BlurShader::Settings::Vertical);
 
-    result.vert = manager.serialize().toString();
+    result.vert = manager.dump().toString();
 
     return result;
 }
@@ -149,12 +149,12 @@ ShaderPair dofBlurShader() {
     manager.define(BlurShader::Settings::Horizontal);
 
     ShaderPair result;
-    result.hor = manager.serialize().toString();
+    result.hor = manager.dump().toString();
 
     manager.removeDefinition(BlurShader::Settings::Horizontal);
     manager.define(BlurShader::Settings::Vertical);
 
-    result.vert = manager.serialize().toString();
+    result.vert = manager.dump().toString();
 
     return result;
 }
@@ -172,12 +172,12 @@ ShaderPair cocBlurShader() {
     manager.define(BlurShader::Settings::Horizontal);
 
     ShaderPair result;
-    result.hor = manager.serialize().toString();
+    result.hor = manager.dump().toString();
 
     manager.removeDefinition(BlurShader::Settings::Horizontal);
     manager.define(BlurShader::Settings::Vertical);
 
-    result.vert = manager.serialize().toString();
+    result.vert = manager.dump().toString();
 
     return result;
 }
@@ -194,7 +194,7 @@ string cubeMapShader() {
     manager.define(CubemapShader::Settings::PosOut, "2");
     manager.define(CubemapShader::Settings::OutputType, "vec3");
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 string ssrShader() {
@@ -203,7 +203,7 @@ string ssrShader() {
     manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                      algineResources "shaders/SSR.frag.glsl");
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 string bloomSearchShader() {
@@ -212,7 +212,7 @@ string bloomSearchShader() {
     manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
                      algineResources "shaders/BloomSearch.frag.glsl");
 
-    return manager.serialize().toString();
+    return manager.dump().toString();
 }
 
 #define writeShaderConfig(name) File(resources "shaders/" #name ".conf.json", File::WriteText).write(name())

@@ -355,7 +355,7 @@ void initShaders() {
 
     auto shaderFromConfig = [](ShaderProgram *program, const string &configName) {
         ShaderManager manager;
-        manager.deserializeFromFile(resources "shaders/" + configName + ".conf.json");
+        manager.importFromFile(resources "shaders/" + configName + ".conf.json");
         program->fromSource(manager.makeGenerated());
         program->loadActiveLocations();
     };
