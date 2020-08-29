@@ -1,0 +1,18 @@
+{
+    "access": "private",
+    "shaders": [
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders"
+                ],
+                "path": "lib/algine/resources/shaders/BloomSearch.frag.glsl",
+                "type": "fragment"
+            }
+        },
+        {
+            "name": "QuadVertexShader"
+        }
+    ]
+}

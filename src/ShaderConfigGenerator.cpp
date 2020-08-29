@@ -1,4 +1,5 @@
-#include <algine/core/shader/ShaderProgramManagerLegacy.h>
+#include <algine/core/shader/ShaderManager.h>
+#include <algine/core/shader/ShaderProgramManager.h>
 
 #include <algine/core/JsonHelper.h>
 
@@ -25,21 +26,17 @@ using namespace algine;
 using namespace tulz;
 
 struct ShaderPair {
-    string hor, vert;
+    string horizontal, vertical;
 };
 
-inline void setIncludePaths(ShaderProgramManagerLegacy &manager) {
-    manager.addIncludePath(algineResources);
-    manager.addIncludePath(resources "shaders");
-}
+string colorProgram() {
+    ShaderManager vertex(Shader::Vertex);
+    vertex.fromFile(algineResources "templates/ColorShader/vertex.glsl");
 
-string colorShader() {
-    ShaderProgramManagerLegacy manager;
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "templates/ColorShader/fragment.glsl");
 
-    setIncludePaths(manager);
-
-    manager.fromFile(algineResources "templates/ColorShader/vertex.glsl",
-                     algineResources "templates/ColorShader/fragment.glsl");
+    ShaderProgramManager manager;
     manager.define(Module::Material::Settings::IncludeCustomProps);
     manager.define(Module::Lighting::Settings::Attenuation);
     manager.define(Module::Lighting::Settings::ShadowMappingPCF);
@@ -53,193 +50,229 @@ string colorShader() {
     manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
     manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
 
+    manager.setPrivateShaders({vertex, fragment});
+
     return manager.dump().toString();
 }
 
-string pointShadowShader() {
-    ShaderProgramManagerLegacy manager;
+string vertexShadowShader() {
+    ShaderManager vertex(Shader::Vertex);
+    vertex.fromFile(algineResources "shaders/Shadow.vert.glsl");
+    vertex.setAccess(ShaderManager::Access::Public);
+    vertex.setName("ShadowVertexShader");
 
-    setIncludePaths(manager);
+    vertex.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
+    vertex.define(Module::BoneSystem::Settings::MaxBones, maxBones);
+    vertex.define(ShadowShader::Settings::BoneSystem);
 
-    manager.fromFile(algineResources "shaders/Shadow.vert.glsl",
-                     algineResources "shaders/Shadow.frag.glsl",
-                     algineResources "shaders/Shadow.geom.glsl");
-    manager.resetDefinitions();
-    manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
-    manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
+    return vertex.dump().toString();
+}
+
+string pointShadowProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/Shadow.frag.glsl");
+
+    ShaderManager geometry(Shader::Geometry);
+    geometry.fromFile(algineResources "shaders/Shadow.geom.glsl");
+
+    ShaderProgramManager manager;
     manager.define(ShadowShader::Settings::PointLightShadowMapping);
-    manager.define(ShadowShader::Settings::BoneSystem);
+
+    manager.addPublicShader("ShadowVertexShader");
+    manager.setPrivateShaders({fragment, geometry});
 
     return manager.dump().toString();
 }
 
-string dirShadowShader() {
-    ShaderProgramManagerLegacy manager;
+string dirShadowProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/Shadow.frag.glsl");
 
-    setIncludePaths(manager);
-
-    manager.fromFile(algineResources "shaders/Shadow.vert.glsl",
-                     algineResources "shaders/Shadow.frag.glsl");
-    manager.resetDefinitions();
-    manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
-    manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
+    ShaderProgramManager manager;
     manager.define(ShadowShader::Settings::DirLightShadowMapping);
-    manager.define(ShadowShader::Settings::BoneSystem);
+
+    manager.addPublicShader("ShadowVertexShader");
+    manager.addPrivateShader(fragment);
 
     return manager.dump().toString();
 }
 
-string dofCocShader() {
-    ShaderProgramManagerLegacy manager;
+string quadVertexShader() {
+    ShaderManager vertex(Shader::Vertex);
+    vertex.fromFile(algineResources "shaders/basic/Quad.vert.glsl");
+    vertex.setAccess(ShaderManager::Access::Public);
+    vertex.setName("QuadVertexShader");
 
-    setIncludePaths(manager);
+    return vertex.dump().toString();
+}
 
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "shaders/DOFCOC.frag.glsl");
+string dofCocProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/DOFCOC.frag.glsl");
+
+    ShaderProgramManager manager;
     manager.define(COCShader::Settings::Cinematic);
 
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
+
     return manager.dump().toString();
 }
 
-string blendShader() {
-    ShaderProgramManagerLegacy manager;
+string blendProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "templates/Blend.frag.glsl");
 
-    setIncludePaths(manager);
-
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "templates/Blend.frag.glsl");
+    ShaderProgramManager manager;
     manager.define(Module::BlendBloom::Settings::BloomAdd);
 
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
+
     return manager.dump().toString();
 }
 
-ShaderPair bloomBlurShader() {
-    ShaderProgramManagerLegacy manager;
+string ssrProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/SSR.frag.glsl");
 
-    setIncludePaths(manager);
+    ShaderProgramManager manager;
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
 
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "shaders/Blur.frag.glsl");
+    return manager.dump().toString();
+}
+
+string bloomSearchProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/BloomSearch.frag.glsl");
+
+    ShaderProgramManager manager;
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
+
+    return manager.dump().toString();
+}
+
+ShaderPair bloomBlurProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/Blur.frag.glsl");
+
+    ShaderProgramManager manager;
     manager.define(BlurShader::Settings::KernelRadius, bloomBlurKernelRadius);
     manager.define(BlurShader::Settings::OutputType, "vec3");
     manager.define(BlurShader::Settings::TexComponent, "rgb");
     manager.define(BlurShader::Settings::Horizontal);
 
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
+
     ShaderPair result;
-    result.hor = manager.dump().toString();
+    result.horizontal = manager.dump().toString();
 
     manager.removeDefinition(BlurShader::Settings::Horizontal);
     manager.define(BlurShader::Settings::Vertical);
 
-    result.vert = manager.dump().toString();
+    result.vertical = manager.dump().toString();
 
     return result;
 }
 
-ShaderPair dofBlurShader() {
-    ShaderProgramManagerLegacy manager;
+ShaderPair dofBlurProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/Blur.frag.glsl");
 
-    setIncludePaths(manager);
-
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "shaders/Blur.frag.glsl");
+    ShaderProgramManager manager;
     manager.define(BlurShader::Settings::KernelRadius, dofBlurKernelRadius);
     manager.define(BlurShader::Settings::OutputType, "vec3");
     manager.define(BlurShader::Settings::TexComponent, "rgb");
     manager.define(BlurShader::Settings::Horizontal);
 
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
+
     ShaderPair result;
-    result.hor = manager.dump().toString();
+    result.horizontal = manager.dump().toString();
 
     manager.removeDefinition(BlurShader::Settings::Horizontal);
     manager.define(BlurShader::Settings::Vertical);
 
-    result.vert = manager.dump().toString();
+    result.vertical = manager.dump().toString();
 
     return result;
 }
 
-ShaderPair cocBlurShader() {
-    ShaderProgramManagerLegacy manager;
+ShaderPair cocBlurProgram() {
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/Blur.frag.glsl");
 
-    setIncludePaths(manager);
-
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "shaders/Blur.frag.glsl");
+    ShaderProgramManager manager;
     manager.define(BlurShader::Settings::KernelRadius, cocBlurKernelRadius);
     manager.define(BlurShader::Settings::OutputType, "float");
     manager.define(BlurShader::Settings::TexComponent, "r");
     manager.define(BlurShader::Settings::Horizontal);
 
+    manager.addPublicShader("QuadVertexShader");
+    manager.addPrivateShader(fragment);
+
     ShaderPair result;
-    result.hor = manager.dump().toString();
+    result.horizontal = manager.dump().toString();
 
     manager.removeDefinition(BlurShader::Settings::Horizontal);
     manager.define(BlurShader::Settings::Vertical);
 
-    result.vert = manager.dump().toString();
+    result.vertical = manager.dump().toString();
 
     return result;
 }
 
-string cubeMapShader() {
-    ShaderProgramManagerLegacy manager;
+string skyboxProgram() {
+    ShaderManager vertex(Shader::Vertex);
+    vertex.fromFile(algineResources "shaders/basic/Cubemap.vert.glsl");
 
-    setIncludePaths(manager);
+    ShaderManager fragment(Shader::Fragment);
+    fragment.fromFile(algineResources "shaders/basic/Cubemap.frag.glsl");
 
-    manager.fromFile(algineResources "shaders/basic/Cubemap.vert.glsl",
-                     algineResources "shaders/basic/Cubemap.frag.glsl");
+    ShaderProgramManager manager;
     manager.define(CubemapShader::Settings::SpherePositions);
     manager.define(CubemapShader::Settings::ColorOut, "0"); // TODO: create constants
     manager.define(CubemapShader::Settings::PosOut, "2");
     manager.define(CubemapShader::Settings::OutputType, "vec3");
 
-    return manager.dump().toString();
-}
-
-string ssrShader() {
-    ShaderProgramManagerLegacy manager;
-
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "shaders/SSR.frag.glsl");
+    manager.setPrivateShaders({vertex, fragment});
 
     return manager.dump().toString();
 }
 
-string bloomSearchShader() {
-    ShaderProgramManagerLegacy manager;
-
-    manager.fromFile(algineResources "shaders/basic/Quad.vert.glsl",
-                     algineResources "shaders/BloomSearch.frag.glsl");
-
-    return manager.dump().toString();
+inline void write(const string &name, const string &data) {
+    File(resources "shaders/" + name + ".conf.json", File::WriteText).write(data);
 }
 
-#define writeShaderConfig(name) File(resources "shaders/" #name ".conf.json", File::WriteText).write(name())
+inline void write(const string &name, const ShaderPair &data) {
+    write(name + ".ver", data.vertical);
+    write(name + ".hor", data.horizontal);
+}
 
-#define writePairShaderConfigBase(name, inf) \
-    File(resources "shaders/" #name "." #inf ".conf.json", File::WriteText).write(data.inf)
-
-#define writePairShaderConfig(name) \
-    { \
-        auto data = name(); \
-        writePairShaderConfigBase(name, hor); \
-        writePairShaderConfigBase(name, vert); \
-    }
+inline string program(const string &name) {
+    return "programs/" + name;
+}
 
 int main() {
-    writeShaderConfig(colorShader);
-    writeShaderConfig(pointShadowShader);
-    writeShaderConfig(dirShadowShader);
-    writeShaderConfig(dofCocShader);
-    writeShaderConfig(blendShader);
-    writeShaderConfig(cubeMapShader);
-    writeShaderConfig(ssrShader);
-    writeShaderConfig(bloomSearchShader);
+    write("Shadow.vert", vertexShadowShader());
+    write(program("PointShadow"), pointShadowProgram());
+    write(program("DirShadow"), dirShadowProgram());
 
-    writePairShaderConfig(bloomBlurShader)
-    writePairShaderConfig(dofBlurShader)
-    writePairShaderConfig(cocBlurShader)
+    write("Quad.vert", quadVertexShader());
+    write(program("DofCoc"), dofCocProgram());
+    write(program("Blend"), blendProgram());
+    write(program("SSR"), ssrProgram());
+    write(program("BloomSearch"), bloomSearchProgram());
+    write(program("BloomBlur"), bloomBlurProgram());
+    write(program("DofBlur"), dofBlurProgram());
+    write(program("CocBlur"), cocBlurProgram());
+
+    write(program("Color"), colorProgram());
+    write(program("Skybox"), skyboxProgram());
 
     return 0;
 }

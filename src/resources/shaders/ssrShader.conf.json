@@ -1,9 +1,0 @@
-{
-    "baseIncludePaths": {
-        "fragment": "lib/algine/resources/shaders",
-        "vertex": "lib/algine/resources/shaders/basic"
-    },
-    "fragment": "lib/algine/resources/shaders/SSR.frag.glsl",
-    "fromSources": false,
-    "vertex": "lib/algine/resources/shaders/basic/Quad.vert.glsl"
-}

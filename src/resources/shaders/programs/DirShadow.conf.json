@@ -1,0 +1,21 @@
+{
+    "access": "private",
+    "params": [
+        "ALGINE_SHADOW_MAPPING_TYPE_DIR_LIGHTING"
+    ],
+    "shaders": [
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders"
+                ],
+                "path": "lib/algine/resources/shaders/Shadow.frag.glsl",
+                "type": "fragment"
+            }
+        },
+        {
+            "name": "ShadowVertexShader"
+        }
+    ]
+}

@@ -16,7 +16,7 @@
 
 #include <algine/core/Engine.h>
 #include <algine/core/shader/ShaderProgram.h>
-#include <algine/core/shader/ShaderProgramManagerLegacy.h>
+#include <algine/core/shader/ShaderProgramManager.h>
 #include <algine/core/Framebuffer.h>
 #include <algine/core/Renderbuffer.h>
 #include <algine/core/texture/Texture2D.h>
@@ -107,17 +107,17 @@ Texture2D *bloomTex;
 Texture2D *cocTex;
 TextureCube *skybox;
 
-ShaderProgram *skyboxShader;
-ShaderProgram *colorShader;
-ShaderProgram *pointShadowShader;
-ShaderProgram *dirShadowShader;
-ShaderProgram *dofBlurHorShader, *dofBlurVertShader;
-ShaderProgram *dofCoCShader;
-ShaderProgram *ssrShader;
-ShaderProgram *bloomSearchShader;
-ShaderProgram *bloomBlurHorShader, *bloomBlurVertShader;
-ShaderProgram *cocBlurHorShader, *cocBlurVertShader;
-ShaderProgram *blendShader;
+ShaderProgramPtr skyboxShader;
+ShaderProgramPtr colorShader;
+ShaderProgramPtr pointShadowShader;
+ShaderProgramPtr dirShadowShader;
+ShaderProgramPtr dofBlurHorShader, dofBlurVertShader;
+ShaderProgramPtr dofCoCShader;
+ShaderProgramPtr ssrShader;
+ShaderProgramPtr bloomSearchShader;
+ShaderProgramPtr bloomBlurHorShader, bloomBlurVertShader;
+ShaderProgramPtr cocBlurHorShader, cocBlurVertShader;
+ShaderProgramPtr blendShader;
 
 MouseEventListener mouseEventListener;
 
@@ -339,11 +339,6 @@ void initGL() {
  * Loading and compiling shaders
  */
 void initShaders() {
-    ShaderProgram::create(skyboxShader, colorShader, pointShadowShader, dirShadowShader,
-                          dofBlurHorShader, dofBlurVertShader, dofCoCShader, ssrShader,
-                          bloomSearchShader, bloomBlurHorShader, bloomBlurVertShader,
-                          cocBlurHorShader, cocBlurVertShader, blendShader);
-
     lightManager.setLightsLimit(dirLightsLimit, Light::Type::Dir);
     lightManager.setLightsLimit(pointLightsLimit, Light::Type::Point);
     lightManager.setLightsMapInitialSlot(6, Light::Type::Point);
@@ -353,32 +348,47 @@ void initShaders() {
 
     cout << "Compiling algine shaders\n";
 
-    auto shaderFromConfig = [](ShaderProgram *program, const string &configName) {
-        ShaderProgramManagerLegacy manager;
-        manager.importFromFile(resources "shaders/" + configName + ".conf.json");
-        program->fromSource(manager.makeGenerated());
+    ShaderManager::setGlobalIncludePaths({
+        algineResources,
+        resources "shaders"
+    });
+
+    auto publicShaderFromConfig = [](const string &name) {
+        ShaderManager shaderManager;
+        shaderManager.importFromFile(resources "shaders/" + name + ".conf.json");
+        shaderManager.createShader();
+    };
+
+    publicShaderFromConfig("Quad.vert");
+    publicShaderFromConfig("Shadow.vert");
+
+    auto programFromConfig = [](ShaderProgramPtr &program, const string &configName) {
+        ShaderProgramManager manager;
+        manager.importFromFile(resources "shaders/programs/" + configName + ".conf.json");
+        program = manager.createProgram();
         program->loadActiveLocations();
     };
 
-    shaderFromConfig(colorShader, "colorShader");
-    shaderFromConfig(pointShadowShader, "pointShadowShader");
-    shaderFromConfig(dirShadowShader, "dirShadowShader");
-    shaderFromConfig(dofCoCShader, "dofCocShader");
-    shaderFromConfig(blendShader, "blendShader");
-    shaderFromConfig(bloomBlurHorShader, "bloomBlurShader.hor");
-    shaderFromConfig(bloomBlurVertShader, "bloomBlurShader.vert");
-    shaderFromConfig(dofBlurHorShader, "dofBlurShader.hor");
-    shaderFromConfig(dofBlurVertShader, "dofBlurShader.vert");
-    shaderFromConfig(cocBlurHorShader, "cocBlurShader.hor");
-    shaderFromConfig(cocBlurVertShader, "cocBlurShader.vert");
-    shaderFromConfig(skyboxShader, "cubeMapShader");
-    shaderFromConfig(ssrShader, "ssrShader");
-    shaderFromConfig(bloomSearchShader, "bloomSearchShader");
+    programFromConfig(colorShader, "Color");
+    programFromConfig(pointShadowShader, "PointShadow");
+    programFromConfig(dirShadowShader, "DirShadow");
+    programFromConfig(dofCoCShader, "DofCoc");
+    programFromConfig(blendShader, "Blend");
+    programFromConfig(bloomBlurHorShader, "BloomBlur.hor");
+    programFromConfig(bloomBlurVertShader, "BloomBlur.ver");
+    programFromConfig(dofBlurHorShader, "DofBlur.hor");
+    programFromConfig(dofBlurVertShader, "DofBlur.ver");
+    programFromConfig(cocBlurHorShader, "CocBlur.hor");
+    programFromConfig(cocBlurVertShader, "CocBlur.ver");
+    programFromConfig(skyboxShader, "Skybox");
+    programFromConfig(ssrShader, "SSR");
+    programFromConfig(bloomSearchShader, "BloomSearch");
 
     cout << "Compilation done\n";
 
-    lightManager.setLightShader(colorShader);
-    lightManager.setPointLightShadowShader(pointShadowShader);
+    // TODO: shaders get()
+    lightManager.setLightShader(colorShader.get());
+    lightManager.setPointLightShadowShader(pointShadowShader.get());
     lightManager.setBindingPoint(1);
     lightManager.init();
 
@@ -421,8 +431,9 @@ void initShaders() {
     createInfo.height = winHeight * bloomK;
     createInfo.params = Texture2D::defaultParams();
 
+    // TODO: shaders get()
     bloomBlur = make_shared<Blur>(createInfo);
-    bloomBlur->setPingPongShaders(bloomBlurHorShader, bloomBlurVertShader);
+    bloomBlur->setPingPongShaders(bloomBlurHorShader.get(), bloomBlurVertShader.get());
     bloomBlur->setQuadRenderer(quadRenderer.get());
     bloomBlur->configureKernel(bloomBlurKernelRadius, bloomBlurKernelSigma);
 
@@ -431,14 +442,14 @@ void initShaders() {
     createInfo.height = winHeight * dofK;
 
     cocBlur = make_shared<Blur>(createInfo);
-    cocBlur->setPingPongShaders(cocBlurHorShader, cocBlurVertShader);
+    cocBlur->setPingPongShaders(cocBlurHorShader.get(), cocBlurVertShader.get());
     cocBlur->setQuadRenderer(quadRenderer.get());
     cocBlur->configureKernel(cocBlurKernelRadius, cocBlurKernelSigma);
 
     createInfo.format = Texture::RGB16F;
 
     dofBlur = make_shared<Blur>(createInfo);
-    dofBlur->setPingPongShaders(dofBlurHorShader, dofBlurVertShader);
+    dofBlur->setPingPongShaders(dofBlurHorShader.get(), dofBlurVertShader.get());
     dofBlur->setQuadRenderer(quadRenderer.get());
     dofBlur->configureKernel(dofBlurKernelRadius, dofBlurKernelSigma);
 
@@ -570,7 +581,7 @@ void createModels() {
     models[2].updateMatrix();
 
     boneManager.setBindingPoint(0);
-    boneManager.setShaderPrograms({colorShader, dirShadowShader, pointShadowShader});
+    boneManager.setShaderPrograms({colorShader.get(), dirShadowShader.get(), pointShadowShader.get()});
     boneManager.setMaxModelsCount(2);
     boneManager.init();
     boneManager.getBlockBufferStorage().bind();
@@ -668,7 +679,7 @@ void updateMatrices() {
  * Draws model in depth map<br>
  * if point light, leave mat empty, but if dir light - it must be light space matrix
  */
-void drawModelDM(Model &model, ShaderProgram *program, const glm::mat4 &mat = glm::mat4(1.0f)) {
+void drawModelDM(Model &model, ShaderProgramPtr &program, const glm::mat4 &mat = glm::mat4(1.0f)) {
     Shape *shape = model.getShape();
     shape->inputLayouts[0]->bind();
 

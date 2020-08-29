@@ -1,0 +1,33 @@
+{
+    "access": "private",
+    "definitions": {
+        "ALGINE_CUBEMAP_COLOR_OUT_COLOR_COMPONENT": "0",
+        "ALGINE_POS_OUT_COLOR_COMPONENT": "2",
+        "vecout": "vec3"
+    },
+    "params": [
+        "ALGINE_SPHERE_POSITIONS"
+    ],
+    "shaders": [
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders/basic"
+                ],
+                "path": "lib/algine/resources/shaders/basic/Cubemap.vert.glsl",
+                "type": "vertex"
+            }
+        },
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders/basic"
+                ],
+                "path": "lib/algine/resources/shaders/basic/Cubemap.frag.glsl",
+                "type": "fragment"
+            }
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "access": "private",
+    "params": [
+        "ALGINE_SHADOW_MAPPING_TYPE_POINT_LIGHTING"
+    ],
+    "shaders": [
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders"
+                ],
+                "path": "lib/algine/resources/shaders/Shadow.frag.glsl",
+                "type": "fragment"
+            }
+        },
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders"
+                ],
+                "path": "lib/algine/resources/shaders/Shadow.geom.glsl",
+                "type": "geometry"
+            }
+        },
+        {
+            "name": "ShadowVertexShader"
+        }
+    ]
+}

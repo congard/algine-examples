@@ -1,0 +1,21 @@
+{
+    "access": "private",
+    "params": [
+        "ALGINE_CINEMATIC_DOF"
+    ],
+    "shaders": [
+        {
+            "dump": {
+                "access": "private",
+                "includePaths": [
+                    "lib/algine/resources/shaders"
+                ],
+                "path": "lib/algine/resources/shaders/DOFCOC.frag.glsl",
+                "type": "fragment"
+            }
+        },
+        {
+            "name": "QuadVertexShader"
+        }
+    ]
+}
