@@ -1,0 +1,16 @@
+{
+    "access": "private",
+    "file": {
+        "dataType": "ubyte",
+        "paths": {
+            "back": "src/resources/skybox/back.tga",
+            "bottom": "src/resources/skybox/bottom.tga",
+            "front": "src/resources/skybox/front.tga",
+            "left": "src/resources/skybox/left.tga",
+            "right": "src/resources/skybox/right.tga",
+            "top": "src/resources/skybox/top.jpg"
+        }
+    },
+    "format": "rgb",
+    "type": "textureCube"
+}

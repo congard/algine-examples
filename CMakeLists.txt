@@ -67,6 +67,6 @@ if (WIN32)
     endif()
 endif()
 
-add_executable(ShaderConfigGenerator src/ShaderConfigGenerator.cpp src/constants.h)
+add_executable(ProjectFilesGenerator src/ProjectFilesGenerator.cpp src/constants.h)
 
-target_link_libraries(ShaderConfigGenerator algine)
+target_link_libraries(ProjectFilesGenerator algine)

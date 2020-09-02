@@ -21,6 +21,7 @@
 #include <algine/core/Renderbuffer.h>
 #include <algine/core/texture/Texture2D.h>
 #include <algine/core/texture/TextureCube.h>
+#include <algine/core/texture/TextureCubeManager.h>
 #include <algine/core/texture/TextureTools.h>
 
 #include <algine/std/camera/Camera.h>
@@ -105,7 +106,7 @@ Texture2D *positionTex;
 Texture2D *screenspaceTex;
 Texture2D *bloomTex;
 Texture2D *cocTex;
-TextureCube *skybox;
+TextureCubePtr skybox;
 
 ShaderProgramPtr skyboxShader;
 ShaderProgramPtr colorShader;
@@ -142,7 +143,7 @@ constexpr float
     shadowOpacity = 0.65f;
 
 inline void updateTexture(Texture *const texture, const uint width, const uint height) {
-    texture->setWidthHeight(width, height);
+    texture->setDimensions(width, height);
     texture->bind();
     texture->update();
 }
@@ -364,7 +365,7 @@ void initShaders() {
 
     auto programFromConfig = [](ShaderProgramPtr &program, const string &configName) {
         ShaderProgramManager manager;
-        manager.importFromFile(resources "shaders/programs/" + configName + ".conf.json");
+        manager.importFromFile(resources "programs/" + configName + ".conf.json");
         program = manager.createProgram();
         program->loadActiveLocations();
     };
@@ -410,17 +411,9 @@ void initShaders() {
     ssrValues->setFormat(Texture::RG16F);
     cocTex->setFormat(Texture::Red16F);
 
-    TextureCube::create(skybox);
-    skybox->setFormat(Texture::RGB);
-    skybox->bind();
-    skybox->fromFile(resources "skybox/right.tga", TextureCube::Right);
-    skybox->fromFile(resources "skybox/left.tga", TextureCube::Left);
-    skybox->fromFile(resources "skybox/top.jpg", TextureCube::Top);
-    skybox->fromFile(resources "skybox/bottom.tga", TextureCube::Bottom);
-    skybox->fromFile(resources "skybox/front.tga", TextureCube::Front);
-    skybox->fromFile(resources "skybox/back.tga", TextureCube::Back);
-    skybox->setParams(TextureCube::defaultParams());
-    skybox->unbind();
+    TextureCubeManager skyboxManager;
+    skyboxManager.importFromFile(resources "textures/Skybox.conf.json");
+    skybox = skyboxManager.createTexture();
 
     Texture2D::setParamsMultiple(Texture2D::defaultParams(),
             colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
@@ -640,7 +633,6 @@ void recycleAll() {
     Framebuffer::destroy(displayFb, screenspaceFb, bloomSearchFb, cocFb);
 
     Texture2D::destroy(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
-    TextureCube::destroy(skybox);
 
     Renderbuffer::destroy(rbo);
 
@@ -961,7 +953,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
 
         Framebuffer *const pFramebuffer = pointLamps[0].shadowMapFb;
         pFramebuffer->bind();
-        auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Right, Framebuffer::DepthAttachment);
+        auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Face::Right, Framebuffer::DepthAttachment);
         TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), pPixelsData, 3);
         pFramebuffer->unbind();
 

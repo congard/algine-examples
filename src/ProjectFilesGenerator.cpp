@@ -1,6 +1,8 @@
 #include <algine/core/shader/ShaderManager.h>
 #include <algine/core/shader/ShaderProgramManager.h>
 
+#include <algine/core/texture/TextureCubeManager.h>
+
 #include <algine/core/JsonHelper.h>
 
 #include <algine/constants/Material.h>
@@ -245,7 +247,7 @@ string skyboxProgram() {
 }
 
 inline void write(const string &name, const string &data) {
-    File(resources "shaders/" + name + ".conf.json", File::WriteText).write(data);
+    File(resources + name + ".conf.json", File::WriteText).write(data);
 }
 
 inline void write(const string &name, const ShaderPair &data) {
@@ -253,16 +255,37 @@ inline void write(const string &name, const ShaderPair &data) {
     write(name + ".hor", data.horizontal);
 }
 
+inline string shader(const string &name) {
+    return "shaders/" + name;
+}
+
 inline string program(const string &name) {
     return "programs/" + name;
 }
 
+inline string texture(const string &name) {
+    return "textures/" + name;
+}
+
+string skyboxTexture() {
+    TextureCubeManager manager;
+    manager.setPath(resources "skybox/right.tga", TextureCube::Face::Right);
+    manager.setPath(resources "skybox/left.tga", TextureCube::Face::Left);
+    manager.setPath(resources "skybox/top.jpg", TextureCube::Face::Top);
+    manager.setPath(resources "skybox/bottom.tga", TextureCube::Face::Bottom);
+    manager.setPath(resources "skybox/front.tga", TextureCube::Face::Front);
+    manager.setPath(resources "skybox/back.tga", TextureCube::Face::Back);
+
+    return manager.dump().toString();
+}
+
 int main() {
-    write("Shadow.vert", vertexShadowShader());
+    // shaders & programs
+    write(shader("Shadow.vert"), vertexShadowShader());
     write(program("PointShadow"), pointShadowProgram());
     write(program("DirShadow"), dirShadowProgram());
 
-    write("Quad.vert", quadVertexShader());
+    write(shader("Quad.vert"), quadVertexShader());
     write(program("DofCoc"), dofCocProgram());
     write(program("Blend"), blendProgram());
     write(program("SSR"), ssrProgram());
@@ -273,6 +296,9 @@ int main() {
 
     write(program("Color"), colorProgram());
     write(program("Skybox"), skyboxProgram());
+
+    // textures
+    write(texture("Skybox"), skyboxTexture());
 
     return 0;
 }
