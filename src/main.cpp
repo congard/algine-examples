@@ -725,7 +725,7 @@ void drawModel(Model &model) {
 void renderToDepthCubemap(const uint index) {
 	pointLamps[index].begin();
     pointLamps[index].updateMatrix();
-    pointLamps[index].shadowMapFb->clearDepthBuffer();
+    pointLamps[index].getShadowFramebuffer()->clearDepthBuffer();
 
     lightManager.pushShadowShaderPos(pointLamps[index]);
 	lightManager.pushShadowShaderMatrices(pointLamps[index]);
@@ -748,16 +748,18 @@ void renderToDepthCubemap(const uint index) {
  */
 void renderToDepthMap(uint index) {
 	dirLamps[index].begin();
-    dirLamps[index].shadowMapFb->clearDepthBuffer();
+    dirLamps[index].getShadowFramebuffer()->clearDepthBuffer();
 
 	// drawing models
-    for (size_t i = 0; i < modelsCount; i++)
-        drawModelDM(models[i], dirShadowShader, dirLamps[index].m_lightSpace);
+    for (uint i = 0; i < modelsCount; i++)
+        drawModelDM(models[i], dirShadowShader, dirLamps[index].getLightSpaceMatrix());
 
 	// drawing lamps
-	for (GLuint i = 0; i < dirLightsCount; i++) {
-		if (i == index) continue;
-        drawModelDM(*dirLamps[i].mptr, dirShadowShader, dirLamps[index].m_lightSpace);
+	for (uint i = 0; i < dirLightsCount; i++) {
+		if (i == index)
+		    continue;
+
+        drawModelDM(*dirLamps[i].mptr, dirShadowShader, dirLamps[index].getLightSpaceMatrix());
 	}
 
 	dirLamps[index].end();
@@ -789,6 +791,7 @@ void render() {
     displayFb->setActiveAttachmentsList(1);
     displayFb->update();
 
+    // TODO: Engine::DepthTest::LessOrEqual
     Engine::setDepthTestMode(Engine::DepthTestLessOrEqual);
     skyboxShader->bind();
     skyboxShader->setMat3(CubemapShader::Vars::ViewMatrix, glm::mat3(camera.getViewMatrix()));
@@ -945,13 +948,13 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
     } else if (keyHeld(GLFW_KEY_2)) {
         manAnimationBlender.changeFactor(0.025f);
     } if (keyPressed(GLFW_KEY_M)) {
-        Framebuffer *const dFramebuffer = dirLamps[0].shadowMapFb;
+        auto dFramebuffer = dirLamps[0].getShadowFramebuffer();
         dFramebuffer->bind();
         auto dPixelsData = dFramebuffer->getAllPixels2D(Framebuffer::DepthAttachment);
         TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "dir_depth.bmp"), dPixelsData, 3);
         dFramebuffer->unbind();
 
-        Framebuffer *const pFramebuffer = pointLamps[0].shadowMapFb;
+        auto pFramebuffer = pointLamps[0].getShadowFramebuffer();
         pFramebuffer->bind();
         auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Face::Right, Framebuffer::DepthAttachment);
         TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), pPixelsData, 3);
