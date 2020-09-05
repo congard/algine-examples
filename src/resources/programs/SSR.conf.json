@@ -12,7 +12,7 @@
             }
         },
         {
-            "name": "QuadVertexShader"
+            "path": "src/resources/shaders/Quad.vert.conf.json"
         }
     ]
 }

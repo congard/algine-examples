@@ -27,9 +27,37 @@ using namespace std;
 using namespace algine;
 using namespace tulz;
 
+constexpr char ext[] = ".conf.json";
+
 struct ShaderPair {
     string horizontal, vertical;
 };
+
+inline void write(const string &name, const string &data) {
+    File(resources + name + ext, File::WriteText).write(data);
+}
+
+inline void write(const string &name, const ShaderPair &data) {
+    write(name + ".ver", data.vertical);
+    write(name + ".hor", data.horizontal);
+}
+
+inline string shader(const string &name) {
+    return "shaders/" + name;
+}
+
+inline string program(const string &name) {
+    return "programs/" + name;
+}
+
+inline string texture(const string &name) {
+    return "textures/" + name;
+}
+
+string ShadowVertGLSL = "Shadow.vert";
+string QuadVertGLSL = "Quad.vert";
+string ShadowVertGLSLPath = resources + shader(ShadowVertGLSL) + ext;
+string QuadVertGLSLPath = resources + shader(QuadVertGLSL) + ext;
 
 string colorProgram() {
     ShaderManager vertex(Shader::Vertex);
@@ -52,7 +80,7 @@ string colorProgram() {
     manager.define(Module::BoneSystem::Settings::MaxBoneAttribsPerVertex, maxBoneAttribsPerVertex);
     manager.define(Module::BoneSystem::Settings::MaxBones, maxBones);
 
-    manager.setPrivateShaders({vertex, fragment});
+    manager.setShaders({vertex, fragment});
 
     return manager.dump().toString();
 }
@@ -80,8 +108,8 @@ string pointShadowProgram() {
     ShaderProgramManager manager;
     manager.define(ShadowShader::Settings::PointLightShadowMapping);
 
-    manager.addPublicShader("ShadowVertexShader");
-    manager.setPrivateShaders({fragment, geometry});
+    manager.addShaderPath(ShadowVertGLSLPath);
+    manager.setShaders({fragment, geometry});
 
     return manager.dump().toString();
 }
@@ -93,8 +121,8 @@ string dirShadowProgram() {
     ShaderProgramManager manager;
     manager.define(ShadowShader::Settings::DirLightShadowMapping);
 
-    manager.addPublicShader("ShadowVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(ShadowVertGLSLPath);
+    manager.addShader(fragment);
 
     return manager.dump().toString();
 }
@@ -115,8 +143,8 @@ string dofCocProgram() {
     ShaderProgramManager manager;
     manager.define(COCShader::Settings::Cinematic);
 
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     return manager.dump().toString();
 }
@@ -128,8 +156,8 @@ string blendProgram() {
     ShaderProgramManager manager;
     manager.define(Module::BlendBloom::Settings::BloomAdd);
 
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     return manager.dump().toString();
 }
@@ -139,8 +167,8 @@ string ssrProgram() {
     fragment.fromFile(algineResources "shaders/SSR.frag.glsl");
 
     ShaderProgramManager manager;
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     return manager.dump().toString();
 }
@@ -150,8 +178,8 @@ string bloomSearchProgram() {
     fragment.fromFile(algineResources "shaders/BloomSearch.frag.glsl");
 
     ShaderProgramManager manager;
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     return manager.dump().toString();
 }
@@ -166,8 +194,8 @@ ShaderPair bloomBlurProgram() {
     manager.define(BlurShader::Settings::TexComponent, "rgb");
     manager.define(BlurShader::Settings::Horizontal);
 
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     ShaderPair result;
     result.horizontal = manager.dump().toString();
@@ -190,8 +218,8 @@ ShaderPair dofBlurProgram() {
     manager.define(BlurShader::Settings::TexComponent, "rgb");
     manager.define(BlurShader::Settings::Horizontal);
 
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     ShaderPair result;
     result.horizontal = manager.dump().toString();
@@ -214,8 +242,8 @@ ShaderPair cocBlurProgram() {
     manager.define(BlurShader::Settings::TexComponent, "r");
     manager.define(BlurShader::Settings::Horizontal);
 
-    manager.addPublicShader("QuadVertexShader");
-    manager.addPrivateShader(fragment);
+    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShader(fragment);
 
     ShaderPair result;
     result.horizontal = manager.dump().toString();
@@ -241,30 +269,9 @@ string skyboxProgram() {
     manager.define(CubemapShader::Settings::PosOut, "2");
     manager.define(CubemapShader::Settings::OutputType, "vec3");
 
-    manager.setPrivateShaders({vertex, fragment});
+    manager.setShaders({vertex, fragment});
 
     return manager.dump().toString();
-}
-
-inline void write(const string &name, const string &data) {
-    File(resources + name + ".conf.json", File::WriteText).write(data);
-}
-
-inline void write(const string &name, const ShaderPair &data) {
-    write(name + ".ver", data.vertical);
-    write(name + ".hor", data.horizontal);
-}
-
-inline string shader(const string &name) {
-    return "shaders/" + name;
-}
-
-inline string program(const string &name) {
-    return "programs/" + name;
-}
-
-inline string texture(const string &name) {
-    return "textures/" + name;
 }
 
 string skyboxTexture() {
@@ -281,11 +288,11 @@ string skyboxTexture() {
 
 int main() {
     // shaders & programs
-    write(shader("Shadow.vert"), vertexShadowShader());
+    write(shader(ShadowVertGLSL), vertexShadowShader());
     write(program("PointShadow"), pointShadowProgram());
     write(program("DirShadow"), dirShadowProgram());
 
-    write(shader("Quad.vert"), quadVertexShader());
+    write(shader(QuadVertGLSL), quadVertexShader());
     write(program("DofCoc"), dofCocProgram());
     write(program("Blend"), blendProgram());
     write(program("SSR"), ssrProgram());

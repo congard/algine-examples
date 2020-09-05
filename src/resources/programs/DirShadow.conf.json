@@ -15,7 +15,7 @@
             }
         },
         {
-            "name": "ShadowVertexShader"
+            "path": "src/resources/shaders/Shadow.vert.conf.json"
         }
     ]
 }

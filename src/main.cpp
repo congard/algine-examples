@@ -354,15 +354,6 @@ void initShaders() {
         resources "shaders"
     });
 
-    auto publicShaderFromConfig = [](const string &name) {
-        ShaderManager shaderManager;
-        shaderManager.importFromFile(resources "shaders/" + name + ".conf.json");
-        shaderManager.createShader();
-    };
-
-    publicShaderFromConfig("Quad.vert");
-    publicShaderFromConfig("Shadow.vert");
-
     auto programFromConfig = [](ShaderProgramPtr &program, const string &configName) {
         ShaderProgramManager manager;
         manager.importFromFile(resources "programs/" + configName + ".conf.json");
