@@ -1,0 +1,16 @@
+{
+    "access": "private",
+    "file": {
+        "dataType": "ubyte",
+        "paths": {
+            "back": "back.tga",
+            "bottom": "bottom.tga",
+            "front": "front.tga",
+            "left": "left.tga",
+            "right": "right.tga",
+            "top": "top.jpg"
+        }
+    },
+    "format": "rgb",
+    "type": "textureCube"
+}
