@@ -16,6 +16,9 @@
 #include <algine/ext/constants/BlendBloom.h>
 #include <algine/ext/constants/BlurShader.h>
 
+#include <algine/std/AMTLMaterialManager.h>
+#include <algine/std/AMTLManager.h>
+
 #include <tulz/File.h>
 
 #include <string>
@@ -27,7 +30,9 @@ using namespace std;
 using namespace algine;
 using namespace tulz;
 
-constexpr char ext[] = ".conf.json";
+using TextureType = AMTLMaterialManager::Texture;
+
+#define ext ".conf.json"
 
 struct ShaderPair {
     string horizontal, vertical;
@@ -276,14 +281,173 @@ string skyboxProgram() {
 
 string skyboxTexture() {
     TextureCubeManager manager;
-    manager.setPath(resources "skybox/right.tga", TextureCube::Face::Right);
-    manager.setPath(resources "skybox/left.tga", TextureCube::Face::Left);
-    manager.setPath(resources "skybox/top.jpg", TextureCube::Face::Top);
-    manager.setPath(resources "skybox/bottom.tga", TextureCube::Face::Bottom);
-    manager.setPath(resources "skybox/front.tga", TextureCube::Face::Front);
-    manager.setPath(resources "skybox/back.tga", TextureCube::Face::Back);
+    manager.setPath("right.tga", TextureCube::Face::Right);
+    manager.setPath("left.tga", TextureCube::Face::Left);
+    manager.setPath("top.jpg", TextureCube::Face::Top);
+    manager.setPath("bottom.tga", TextureCube::Face::Bottom);
+    manager.setPath("front.tga", TextureCube::Face::Front);
+    manager.setPath("back.tga", TextureCube::Face::Back);
 
     return manager.dump().toString();
+}
+
+namespace Astroboy {
+string texture() {
+    Texture2DManager manager;
+    manager.setName("astroboy_texture");
+    manager.setAccess(ManagerBase::Access::Public);
+    manager.setPath("boy.jpg");
+
+    return manager.dump().toString();
+}
+
+string normalMap() {
+    Texture2DManager manager;
+    manager.setName("astroboy_normals");
+    manager.setAccess(ManagerBase::Access::Public);
+    manager.setPath("norm.png");
+
+    return manager.dump().toString();
+}
+
+string materialLibrary() {
+    AMTLMaterialManager materialManager;
+    materialManager.setTexturePaths({
+        {TextureType::Ambient, "boy" ext},
+        {TextureType::Diffuse, "boy" ext},
+        {TextureType::Specular, "boy" ext},
+        {TextureType::Normal, "norm" ext}
+    });
+
+    AMTLManager manager;
+    manager.addMaterial(materialManager, "face");
+    manager.addMaterial(materialManager, "glass");
+    manager.addMaterial(materialManager, "shiny");
+    manager.addMaterial(materialManager, "matte");
+
+    return manager.dump().toString();
+}
+}
+
+namespace Chess {
+inline Texture2DManager getTexture(const string &path, const string &name = {},
+                         ManagerBase::Access access = ManagerBase::Access::Private)
+{
+    Texture2DManager manager;
+    manager.setPath(path);
+    manager.setParams({
+        {Texture::WrapU, Texture::Repeat},
+        {Texture::WrapV, Texture::Repeat},
+        {Texture::MinFilter, Texture::Linear},
+        {Texture::MagFilter, Texture::Linear}
+    });
+    manager.setAccess(access);
+    manager.setName(name);
+
+    return manager;
+}
+
+string blackTexture() {
+    return getTexture("Brown_wood_texture.jpg", "Brown_wood_texture", ManagerBase::Access::Public).dump().toString();
+}
+
+auto blackSpecularMap() {
+    return getTexture("Brown_wood_texture_SPEC.jpg");
+}
+
+auto blackNormalMap() {
+    return getTexture("Brown_wood_texture_NORM.png");
+}
+
+string whiteTexture() {
+    return getTexture("White_wood_texture.jpg", "White_wood_texture", ManagerBase::Access::Public).dump().toString();
+}
+
+auto whiteSpecularMap() {
+    return getTexture("White_wood_texture_SPEC.jpg");
+}
+
+auto whiteNormalMap() {
+    return getTexture("White_wood_texture_NORM.png");
+}
+
+auto reflectionTexture() {
+    return getTexture("desk_texture_reflection_strength_jitter.jpg");
+}
+
+auto jitterTexture() {
+    return getTexture("jitter.jpg");
+}
+
+string materialLibrary() {
+    AMTLMaterialManager deskMaterial;
+    deskMaterial.setTextures({
+        {TextureType::Reflection, reflectionTexture()},
+        {TextureType::Jitter, jitterTexture()}
+    });
+
+    AMTLMaterialManager blackMaterial;
+    blackMaterial.setTexturePaths({
+        {TextureType::Ambient, "Brown_wood_texture" ext},
+        {TextureType::Diffuse, "Brown_wood_texture" ext}
+    });
+    blackMaterial.setTextures({
+        {TextureType::Specular, blackSpecularMap()},
+        {TextureType::Normal, blackNormalMap()}
+    });
+
+    AMTLMaterialManager whiteMaterial;
+    whiteMaterial.setTexturePaths({
+        {TextureType::Ambient, "White_wood_texture" ext},
+        {TextureType::Diffuse, "White_wood_texture" ext}
+    });
+    whiteMaterial.setTextures({
+        {TextureType::Specular, whiteSpecularMap()},
+        {TextureType::Normal, whiteNormalMap()}
+    });
+
+    AMTLManager manager;
+    manager.addMaterial(deskMaterial, "desk");
+    manager.addMaterial(blackMaterial, "black");
+    manager.addMaterial(whiteMaterial, "white");
+
+    return manager.dump().toString();
+}
+}
+
+namespace Man {
+string texture() {
+    Texture2DManager manager;
+    manager.setName("man_texture");
+    manager.setAccess(ManagerBase::Access::Public);
+    manager.setPath("tex.jpg");
+
+    return manager.dump().toString();
+}
+
+string normalMap() {
+    Texture2DManager manager;
+    manager.setName("man_normals");
+    manager.setAccess(ManagerBase::Access::Public);
+    manager.setPath("norm.png");
+
+    return manager.dump().toString();
+}
+
+string materialLibrary() {
+    AMTLMaterialManager materialManager;
+    materialManager.setTexturePaths({
+        {TextureType::Ambient, "tex" ext},
+        {TextureType::Diffuse, "tex" ext},
+        {TextureType::Specular, "tex" ext},
+        {TextureType::Normal, "norm" ext}
+    });
+
+    AMTLManager manager;
+    manager.addMaterial(materialManager, "material");
+
+    return manager.dump().toString();
+}
 }
 
 int main() {
@@ -304,8 +468,20 @@ int main() {
     write(program("Color"), colorProgram());
     write(program("Skybox"), skyboxProgram());
 
-    // textures
-    write(texture("Skybox"), skyboxTexture());
+    // textures & materials
+    write(texture("skybox/Skybox"), skyboxTexture());
+
+    write("models/astroboy/boy", Astroboy::texture());
+    write("models/astroboy/norm", Astroboy::normalMap());
+    File(resources "models/astroboy/astroboy_walk.amtl", File::WriteText).write(Astroboy::materialLibrary());
+
+    write("models/chess/Brown_wood_texture", Chess::blackTexture());
+    write("models/chess/White_wood_texture", Chess::whiteTexture());
+    File(resources "models/chess/Classic Chess small.amtl", File::WriteText).write(Chess::materialLibrary());
+
+    write("models/man/tex", Man::texture());
+    write("models/man/norm", Man::normalMap());
+    File(resources "models/man/man.amtl", File::WriteText).write(Man::materialLibrary());
 
     return 0;
 }

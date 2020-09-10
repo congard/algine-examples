@@ -1,18 +1,19 @@
 [
-  {
-    "name": "material",
-    "ambientTex": {
-      "path": "tex.jpg"
-    },
-    "diffuseTex": {
-      "path": "tex.jpg"
-    },
-    "specularTex": {
-      "path": "tex.jpg"
-    },
-    "normalTex": {
-      "path": "norm.png"
+    {
+        "name": "material",
+        "textures": {
+            "ambient": {
+                "path": "tex.conf.json"
+            },
+            "diffuse": {
+                "path": "tex.conf.json"
+            },
+            "normal": {
+                "path": "norm.conf.json"
+            },
+            "specular": {
+                "path": "tex.conf.json"
+            }
+        }
     }
-  }
-] 
- 
+]

@@ -1,0 +1,10 @@
+{
+    "access": "public",
+    "file": {
+        "dataType": "ubyte",
+        "path": "boy.jpg"
+    },
+    "format": "rgb",
+    "name": "astroboy_texture",
+    "type": "texture2d"
+}

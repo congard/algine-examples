@@ -1,0 +1,10 @@
+{
+    "access": "public",
+    "file": {
+        "dataType": "ubyte",
+        "path": "norm.png"
+    },
+    "format": "rgb",
+    "name": "man_normals",
+    "type": "texture2d"
+}

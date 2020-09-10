@@ -211,7 +211,8 @@ void createPointLamp(PointLamp &result, const glm::vec3 &pos, const glm::vec3 &c
 void createDirLamp(DirLamp &result,
         const glm::vec3 &pos, const glm::vec3 &rotate,
         const glm::vec3 &color,
-        usize id) {
+        usize id)
+{
     result.setPos(pos);
     result.translate();
     result.setRotate(rotate.y, rotate.x, rotate.z);
@@ -239,17 +240,22 @@ void createDirLamp(DirLamp &result,
 }
 
 void
-createShapes(const string &path, const string &texPath, const size_t id, const bool inverseNormals = false,
-             bool enableBones = false) {
+createShapes(const string &path, size_t id, bool inverseNormals = false, bool enableBones = false)
+{
     ShapeLoader shapeLoader;
     shapeLoader.setModelPath(path);
-    shapeLoader.setTexturesPath(texPath);
+
     if (inverseNormals)
-        shapeLoader.addParam(ShapeLoader::InverseNormals);
+        shapeLoader.addParam(ShapeLoader::Param::InverseNormals);
     if (!enableBones)
-        shapeLoader.addParam(ShapeLoader::DisableBones);
-    shapeLoader.addParams(ShapeLoader::Triangulate, ShapeLoader::SortByPolygonType,
-            ShapeLoader::CalcTangentSpace, ShapeLoader::JoinIdenticalVertices, ShapeLoader::PrepareAllAnimations);
+        shapeLoader.addParam(ShapeLoader::Param::DisableBones);
+
+    shapeLoader.addParams({
+        ShapeLoader::Param::Triangulate, ShapeLoader::Param::SortByPolygonType,
+        ShapeLoader::Param::CalcTangentSpace, ShapeLoader::Param::JoinIdenticalVertices,
+        ShapeLoader::Param::PrepareAllAnimations
+    });
+
     shapeLoader.load();
 
     shapes[id].reset(shapeLoader.getShape());
@@ -403,7 +409,7 @@ void initShaders() {
     cocTex->setFormat(Texture::Red16F);
 
     TextureCubeManager skyboxManager;
-    skyboxManager.importFromFile(resources "textures/Skybox.conf.json");
+    skyboxManager.importFromFile(resources "textures/skybox/Skybox.conf.json");
     skybox = skyboxManager.createTexture();
 
     Texture2D::setParamsMultiple(Texture2D::defaultParams(),
@@ -529,10 +535,10 @@ void initCamera() {
 // Creating shapes and loading textures
 #define modelsPath resources "models/"
 void initShapes() {
-    createShapes(modelsPath "chess/Classic Chess small.obj", modelsPath "chess", 0, false); // classic chess
-    createShapes(modelsPath "japanese_lamp/japanese_lamp.obj", modelsPath "japanese_lamp", 1, true); // Japanese lamp
-    createShapes(modelsPath "man/man.fbx", modelsPath "man", 2, false, true); // animated man
-    createShapes(modelsPath "astroboy/astroboy_walk.dae", modelsPath "astroboy", 3, false, true);
+    createShapes(modelsPath "chess/Classic Chess small.obj", 0, false); // classic chess
+    createShapes(modelsPath "japanese_lamp/japanese_lamp.obj", 1, true); // Japanese lamp
+    createShapes(modelsPath "man/man.fbx", 2, false, true); // animated man
+    createShapes(modelsPath "astroboy/astroboy_walk.dae", 3, false, true);
 }
 
 /**

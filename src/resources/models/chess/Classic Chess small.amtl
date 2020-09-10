@@ -1,11 +1,131 @@
 [
-  {
-    "name": "desk",
-    "reflectionTex": {
-      "path": "desk_texture_reflection_strength_jitter.jpg"
+    {
+        "name": "desk",
+        "textures": {
+            "jitter": {
+                "dump": {
+                    "access": "private",
+                    "file": {
+                        "dataType": "ubyte",
+                        "path": "jitter.jpg"
+                    },
+                    "format": "rgb",
+                    "params": {
+                        "magFilter": "linear",
+                        "minFilter": "linear",
+                        "wrapU": "repeat",
+                        "wrapV": "repeat"
+                    },
+                    "type": "texture2d"
+                }
+            },
+            "reflection": {
+                "dump": {
+                    "access": "private",
+                    "file": {
+                        "dataType": "ubyte",
+                        "path": "desk_texture_reflection_strength_jitter.jpg"
+                    },
+                    "format": "rgb",
+                    "params": {
+                        "magFilter": "linear",
+                        "minFilter": "linear",
+                        "wrapU": "repeat",
+                        "wrapV": "repeat"
+                    },
+                    "type": "texture2d"
+                }
+            }
+        }
     },
-    "jitterTex": {
-      "path": "jitter.jpg"
+    {
+        "name": "black",
+        "textures": {
+            "ambient": {
+                "path": "Brown_wood_texture.conf.json"
+            },
+            "diffuse": {
+                "path": "Brown_wood_texture.conf.json"
+            },
+            "normal": {
+                "dump": {
+                    "access": "private",
+                    "file": {
+                        "dataType": "ubyte",
+                        "path": "Brown_wood_texture_NORM.png"
+                    },
+                    "format": "rgb",
+                    "params": {
+                        "magFilter": "linear",
+                        "minFilter": "linear",
+                        "wrapU": "repeat",
+                        "wrapV": "repeat"
+                    },
+                    "type": "texture2d"
+                }
+            },
+            "specular": {
+                "dump": {
+                    "access": "private",
+                    "file": {
+                        "dataType": "ubyte",
+                        "path": "Brown_wood_texture_SPEC.jpg"
+                    },
+                    "format": "rgb",
+                    "params": {
+                        "magFilter": "linear",
+                        "minFilter": "linear",
+                        "wrapU": "repeat",
+                        "wrapV": "repeat"
+                    },
+                    "type": "texture2d"
+                }
+            }
+        }
+    },
+    {
+        "name": "white",
+        "textures": {
+            "ambient": {
+                "path": "White_wood_texture.conf.json"
+            },
+            "diffuse": {
+                "path": "White_wood_texture.conf.json"
+            },
+            "normal": {
+                "dump": {
+                    "access": "private",
+                    "file": {
+                        "dataType": "ubyte",
+                        "path": "White_wood_texture_NORM.png"
+                    },
+                    "format": "rgb",
+                    "params": {
+                        "magFilter": "linear",
+                        "minFilter": "linear",
+                        "wrapU": "repeat",
+                        "wrapV": "repeat"
+                    },
+                    "type": "texture2d"
+                }
+            },
+            "specular": {
+                "dump": {
+                    "access": "private",
+                    "file": {
+                        "dataType": "ubyte",
+                        "path": "White_wood_texture_SPEC.jpg"
+                    },
+                    "format": "rgb",
+                    "params": {
+                        "magFilter": "linear",
+                        "minFilter": "linear",
+                        "wrapU": "repeat",
+                        "wrapV": "repeat"
+                    },
+                    "type": "texture2d"
+                }
+            }
+        }
     }
-  }
 ]

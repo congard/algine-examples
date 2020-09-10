@@ -1,0 +1,10 @@
+{
+    "access": "public",
+    "file": {
+        "dataType": "ubyte",
+        "path": "tex.jpg"
+    },
+    "format": "rgb",
+    "name": "man_texture",
+    "type": "texture2d"
+}

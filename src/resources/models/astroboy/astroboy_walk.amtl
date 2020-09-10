@@ -1,62 +1,70 @@
 [
-  {
-    "name": "face",
-    "ambientTex": {
-      "path": "boy.jpg"
+    {
+        "name": "face",
+        "textures": {
+            "ambient": {
+                "path": "boy.conf.json"
+            },
+            "diffuse": {
+                "path": "boy.conf.json"
+            },
+            "normal": {
+                "path": "norm.conf.json"
+            },
+            "specular": {
+                "path": "boy.conf.json"
+            }
+        }
     },
-    "diffuseTex": {
-      "path": "boy.jpg"
+    {
+        "name": "glass",
+        "textures": {
+            "ambient": {
+                "path": "boy.conf.json"
+            },
+            "diffuse": {
+                "path": "boy.conf.json"
+            },
+            "normal": {
+                "path": "norm.conf.json"
+            },
+            "specular": {
+                "path": "boy.conf.json"
+            }
+        }
     },
-    "specularTex": {
-      "path": "boy.jpg"
+    {
+        "name": "shiny",
+        "textures": {
+            "ambient": {
+                "path": "boy.conf.json"
+            },
+            "diffuse": {
+                "path": "boy.conf.json"
+            },
+            "normal": {
+                "path": "norm.conf.json"
+            },
+            "specular": {
+                "path": "boy.conf.json"
+            }
+        }
     },
-    "normalTex": {
-      "path": "norm.png"
+    {
+        "name": "matte",
+        "textures": {
+            "ambient": {
+                "path": "boy.conf.json"
+            },
+            "diffuse": {
+                "path": "boy.conf.json"
+            },
+            "normal": {
+                "path": "norm.conf.json"
+            },
+            "specular": {
+                "path": "boy.conf.json"
+            }
+        }
     }
-  },
-  {
-    "name": "glass",
-    "ambientTex": {
-      "path": "boy.jpg"
-    },
-    "diffuseTex": {
-      "path": "boy.jpg"
-    },
-    "specularTex": {
-      "path": "boy.jpg"
-    },
-    "normalTex": {
-      "path": "norm.png"
-    }
-  },
-  {
-    "name": "shiny",
-    "ambientTex": {
-      "path": "boy.jpg"
-    },
-    "diffuseTex": {
-      "path": "boy.jpg"
-    },
-    "specularTex": {
-      "path": "boy.jpg"
-    },
-    "normalTex": {
-      "path": "norm.png"
-    }
-  },
-  {
-    "name": "matte",
-    "ambientTex": {
-      "path": "boy.jpg"
-    },
-    "diffuseTex": {
-      "path": "boy.jpg"
-    },
-    "specularTex": {
-      "path": "boy.jpg"
-    },
-    "normalTex": {
-      "path": "norm.png"
-    }
-  }
 ]
