@@ -7,15 +7,12 @@
         {
             "dump": {
                 "access": "private",
-                "includePaths": [
-                    "lib/algine/resources/templates"
-                ],
-                "path": "lib/algine/resources/templates/Blend.frag.glsl",
+                "path": "../../../lib/algine/resources/templates/Blend.frag.glsl",
                 "type": "fragment"
             }
         },
         {
-            "path": "src/resources/shaders/Quad.vert.conf.json"
+            "path": "../shaders/Quad.vert.conf.json"
         }
     ]
 }

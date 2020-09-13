@@ -59,17 +59,19 @@ inline string texture(const string &name) {
     return "textures/" + name;
 }
 
-string ShadowVertGLSL = "Shadow.vert";
-string QuadVertGLSL = "Quad.vert";
-string ShadowVertGLSLPath = resources + shader(ShadowVertGLSL) + ext;
-string QuadVertGLSLPath = resources + shader(QuadVertGLSL) + ext;
+string ShadowVertConfName = "Shadow.vert";
+string QuadVertConfName = "Quad.vert";
+string ShadowVertConfPath = "../" + shader(ShadowVertConfName) + ext;
+string QuadVertConfPath = "../" + shader(QuadVertConfName) + ext;
+
+#define dirUp3 "../../../"
 
 string colorProgram() {
     ShaderManager vertex(Shader::Vertex);
-    vertex.fromFile(algineResources "templates/ColorShader/vertex.glsl");
+    vertex.setPath(dirUp3 algineResources "templates/ColorShader/vertex.glsl");
 
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "templates/ColorShader/fragment.glsl");
+    fragment.setPath(dirUp3 algineResources "templates/ColorShader/fragment.glsl");
 
     ShaderProgramManager manager;
     manager.define(Module::Material::Settings::IncludeCustomProps);
@@ -92,7 +94,7 @@ string colorProgram() {
 
 string vertexShadowShader() {
     ShaderManager vertex(Shader::Vertex);
-    vertex.fromFile(algineResources "shaders/Shadow.vert.glsl");
+    vertex.setPath(dirUp3 algineResources "shaders/Shadow.vert.glsl");
     vertex.setAccess(ShaderManager::Access::Public);
     vertex.setName("ShadowVertexShader");
 
@@ -105,15 +107,15 @@ string vertexShadowShader() {
 
 string pointShadowProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/Shadow.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/Shadow.frag.glsl");
 
     ShaderManager geometry(Shader::Geometry);
-    geometry.fromFile(algineResources "shaders/Shadow.geom.glsl");
+    geometry.setPath(dirUp3 algineResources "shaders/Shadow.geom.glsl");
 
     ShaderProgramManager manager;
     manager.define(ShadowShader::Settings::PointLightShadowMapping);
 
-    manager.addShaderPath(ShadowVertGLSLPath);
+    manager.addShaderPath(ShadowVertConfPath);
     manager.setShaders({fragment, geometry});
 
     return manager.dump().toString();
@@ -121,12 +123,12 @@ string pointShadowProgram() {
 
 string dirShadowProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/Shadow.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/Shadow.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(ShadowShader::Settings::DirLightShadowMapping);
 
-    manager.addShaderPath(ShadowVertGLSLPath);
+    manager.addShaderPath(ShadowVertConfPath);
     manager.addShader(fragment);
 
     return manager.dump().toString();
@@ -134,7 +136,7 @@ string dirShadowProgram() {
 
 string quadVertexShader() {
     ShaderManager vertex(Shader::Vertex);
-    vertex.fromFile(algineResources "shaders/basic/Quad.vert.glsl");
+    vertex.setPath(dirUp3 algineResources "shaders/basic/Quad.vert.glsl");
     vertex.setAccess(ShaderManager::Access::Public);
     vertex.setName("QuadVertexShader");
 
@@ -143,12 +145,12 @@ string quadVertexShader() {
 
 string dofCocProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/DOFCOC.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/DOFCOC.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(COCShader::Settings::Cinematic);
 
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     return manager.dump().toString();
@@ -156,12 +158,12 @@ string dofCocProgram() {
 
 string blendProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "templates/Blend.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "templates/Blend.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(Module::BlendBloom::Settings::BloomAdd);
 
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     return manager.dump().toString();
@@ -169,10 +171,10 @@ string blendProgram() {
 
 string ssrProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/SSR.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/SSR.frag.glsl");
 
     ShaderProgramManager manager;
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     return manager.dump().toString();
@@ -180,10 +182,10 @@ string ssrProgram() {
 
 string bloomSearchProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/BloomSearch.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/BloomSearch.frag.glsl");
 
     ShaderProgramManager manager;
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     return manager.dump().toString();
@@ -191,7 +193,7 @@ string bloomSearchProgram() {
 
 ShaderPair bloomBlurProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/Blur.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/Blur.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(BlurShader::Settings::KernelRadius, bloomBlurKernelRadius);
@@ -199,7 +201,7 @@ ShaderPair bloomBlurProgram() {
     manager.define(BlurShader::Settings::TexComponent, "rgb");
     manager.define(BlurShader::Settings::Horizontal);
 
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     ShaderPair result;
@@ -215,7 +217,7 @@ ShaderPair bloomBlurProgram() {
 
 ShaderPair dofBlurProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/Blur.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/Blur.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(BlurShader::Settings::KernelRadius, dofBlurKernelRadius);
@@ -223,7 +225,7 @@ ShaderPair dofBlurProgram() {
     manager.define(BlurShader::Settings::TexComponent, "rgb");
     manager.define(BlurShader::Settings::Horizontal);
 
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     ShaderPair result;
@@ -239,7 +241,7 @@ ShaderPair dofBlurProgram() {
 
 ShaderPair cocBlurProgram() {
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/Blur.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/Blur.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(BlurShader::Settings::KernelRadius, cocBlurKernelRadius);
@@ -247,7 +249,7 @@ ShaderPair cocBlurProgram() {
     manager.define(BlurShader::Settings::TexComponent, "r");
     manager.define(BlurShader::Settings::Horizontal);
 
-    manager.addShaderPath(QuadVertGLSLPath);
+    manager.addShaderPath(QuadVertConfPath);
     manager.addShader(fragment);
 
     ShaderPair result;
@@ -263,10 +265,10 @@ ShaderPair cocBlurProgram() {
 
 string skyboxProgram() {
     ShaderManager vertex(Shader::Vertex);
-    vertex.fromFile(algineResources "shaders/basic/Cubemap.vert.glsl");
+    vertex.setPath(dirUp3 algineResources "shaders/basic/Cubemap.vert.glsl");
 
     ShaderManager fragment(Shader::Fragment);
-    fragment.fromFile(algineResources "shaders/basic/Cubemap.frag.glsl");
+    fragment.setPath(dirUp3 algineResources "shaders/basic/Cubemap.frag.glsl");
 
     ShaderProgramManager manager;
     manager.define(CubemapShader::Settings::SpherePositions);
@@ -452,11 +454,11 @@ string materialLibrary() {
 
 int main() {
     // shaders & programs
-    write(shader(ShadowVertGLSL), vertexShadowShader());
+    write(shader(ShadowVertConfName), vertexShadowShader());
     write(program("PointShadow"), pointShadowProgram());
     write(program("DirShadow"), dirShadowProgram());
 
-    write(shader(QuadVertGLSL), quadVertexShader());
+    write(shader(QuadVertConfName), quadVertexShader());
     write(program("DofCoc"), dofCocProgram());
     write(program("Blend"), blendProgram());
     write(program("SSR"), ssrProgram());

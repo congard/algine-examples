@@ -7,15 +7,12 @@
         {
             "dump": {
                 "access": "private",
-                "includePaths": [
-                    "lib/algine/resources/shaders"
-                ],
-                "path": "lib/algine/resources/shaders/Shadow.frag.glsl",
+                "path": "../../../lib/algine/resources/shaders/Shadow.frag.glsl",
                 "type": "fragment"
             }
         },
         {
-            "path": "src/resources/shaders/Shadow.vert.conf.json"
+            "path": "../shaders/Shadow.vert.conf.json"
         }
     ]
 }

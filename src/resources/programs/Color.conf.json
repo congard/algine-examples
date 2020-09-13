@@ -20,20 +20,14 @@
         {
             "dump": {
                 "access": "private",
-                "includePaths": [
-                    "lib/algine/resources/templates/ColorShader"
-                ],
-                "path": "lib/algine/resources/templates/ColorShader/vertex.glsl",
+                "path": "../../../lib/algine/resources/templates/ColorShader/vertex.glsl",
                 "type": "vertex"
             }
         },
         {
             "dump": {
                 "access": "private",
-                "includePaths": [
-                    "lib/algine/resources/templates/ColorShader"
-                ],
-                "path": "lib/algine/resources/templates/ColorShader/fragment.glsl",
+                "path": "../../../lib/algine/resources/templates/ColorShader/fragment.glsl",
                 "type": "fragment"
             }
         }

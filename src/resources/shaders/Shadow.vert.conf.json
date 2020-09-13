@@ -4,13 +4,10 @@
         "MAX_BONES": "64",
         "MAX_BONE_ATTRIBS_PER_VERTEX": "1"
     },
-    "includePaths": [
-        "lib/algine/resources/shaders"
-    ],
     "name": "ShadowVertexShader",
     "params": [
         "ALGINE_BONE_SYSTEM"
     ],
-    "path": "lib/algine/resources/shaders/Shadow.vert.glsl",
+    "path": "../../../lib/algine/resources/shaders/Shadow.vert.glsl",
     "type": "vertex"
 }

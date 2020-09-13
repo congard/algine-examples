@@ -12,20 +12,14 @@
         {
             "dump": {
                 "access": "private",
-                "includePaths": [
-                    "lib/algine/resources/shaders/basic"
-                ],
-                "path": "lib/algine/resources/shaders/basic/Cubemap.vert.glsl",
+                "path": "../../../lib/algine/resources/shaders/basic/Cubemap.vert.glsl",
                 "type": "vertex"
             }
         },
         {
             "dump": {
                 "access": "private",
-                "includePaths": [
-                    "lib/algine/resources/shaders/basic"
-                ],
-                "path": "lib/algine/resources/shaders/basic/Cubemap.frag.glsl",
+                "path": "../../../lib/algine/resources/shaders/basic/Cubemap.frag.glsl",
                 "type": "fragment"
             }
         }
