@@ -1,0 +1,16 @@
+{
+    "access": "public",
+    "file": {
+        "dataType": "ubyte",
+        "path": "Brown_wood_texture.jpg"
+    },
+    "format": "rgb",
+    "name": "Brown_wood_texture",
+    "params": {
+        "magFilter": "linear",
+        "minFilter": "linear",
+        "wrapU": "repeat",
+        "wrapV": "repeat"
+    },
+    "type": "texture2d"
+}
