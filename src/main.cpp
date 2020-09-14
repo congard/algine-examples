@@ -173,7 +173,7 @@ void window_size_callback(GLFWwindow* window, int width, int height) {
     winHeight = height;
 
     rbo->bind();
-    rbo->setWidthHeight(width, height);
+    rbo->setDimensions(width, height);
     rbo->update();
     rbo->unbind();
 
@@ -446,7 +446,7 @@ void initShaders() {
     updateRenderTextures();
 
     rbo->bind();
-    rbo->setWidthHeight(winWidth, winHeight);
+    rbo->setDimensions(winWidth, winHeight);
     rbo->setFormat(Texture::DepthComponent);
     rbo->update();
     rbo->unbind();
