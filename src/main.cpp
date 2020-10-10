@@ -15,6 +15,7 @@
 #include <tulz/Path.h>
 
 #include <algine/core/Engine.h>
+#include <algine/core/PtrMaker.h>
 #include <algine/core/shader/ShaderProgram.h>
 #include <algine/core/shader/ShaderProgramManager.h>
 #include <algine/core/Framebuffer.h>
@@ -32,6 +33,7 @@
 #include <algine/std/lighting/DirLamp.h>
 #include <algine/std/lighting/PointLamp.h>
 #include <algine/std/lighting/LightingManager.h>
+#include <algine/std/CubeRendererPtr.h>
 #include <algine/std/CubeRenderer.h>
 #include <algine/std/QuadRenderer.h>
 #include <algine/std/animation/AnimationBlender.h>
@@ -86,26 +88,25 @@ PointLamp pointLamps[pointLightsCount];
 DirLamp dirLamps[dirLightsCount];
 LightingManager lightManager;
 
-shared_ptr<CubeRenderer> skyboxRenderer;
-shared_ptr<QuadRenderer> quadRenderer;
+CubeRendererPtr skyboxRenderer;
+QuadRendererPtr quadRenderer;
 
 shared_ptr<Blur> bloomBlur;
 shared_ptr<Blur> dofBlur;
 shared_ptr<Blur> cocBlur;
 
-Renderbuffer *rbo;
-Framebuffer *displayFb;
-Framebuffer *screenspaceFb;
-Framebuffer *bloomSearchFb;
-Framebuffer *cocFb;
+FramebufferPtr displayFb;
+FramebufferPtr screenspaceFb;
+FramebufferPtr bloomSearchFb;
+FramebufferPtr cocFb;
 
-Texture2D *colorTex;
-Texture2D *normalTex;
-Texture2D *ssrValues;
-Texture2D *positionTex;
-Texture2D *screenspaceTex;
-Texture2D *bloomTex;
-Texture2D *cocTex;
+Texture2DPtr colorTex;
+Texture2DPtr normalTex;
+Texture2DPtr ssrValues;
+Texture2DPtr positionTex;
+Texture2DPtr screenspaceTex;
+Texture2DPtr bloomTex;
+Texture2DPtr cocTex;
 TextureCubePtr skybox;
 
 ShaderProgramPtr skyboxShader;
@@ -142,42 +143,22 @@ constexpr float
     // shadow opacity: 1.0 - opaque shadow (by default), 0.0 - transparent
     shadowOpacity = 0.65f;
 
-inline void updateTexture(Texture *const texture, const uint width, const uint height) {
-    texture->setDimensions(width, height);
-    texture->bind();
-    texture->update();
+void resize() {
+    displayFb->resizeAttachments(winWidth, winHeight);
+    screenspaceFb->resizeAttachments(winWidth, winHeight); // TODO: make small sst + blend pass in the future
+    bloomSearchFb->resizeAttachments(winWidth * bloomK, winHeight * bloomK);
+    cocFb->resizeAttachments(winWidth * dofK, winHeight * dofK);
+
+    bloomBlur->resizeOutput(winWidth * bloomK, winHeight * bloomK);
+    cocBlur->resizeOutput(winWidth * dofK, winHeight * dofK);
+    dofBlur->resizeOutput(winWidth * dofK, winHeight * dofK);
 }
 
-void updateRenderTextures() {
-    updateTexture(colorTex, winWidth, winHeight);
-    updateTexture(normalTex, winWidth, winHeight);
-    updateTexture(ssrValues, winWidth, winHeight);
-    updateTexture(positionTex, winWidth, winHeight);
-    updateTexture(screenspaceTex, winWidth, winHeight); // TODO: make small sst + blend pass in the future
-    updateTexture(bloomTex, winWidth * bloomK, winHeight * bloomK);
-
-    for (size_t i = 0; i < 2; ++i) {
-        updateTexture(bloomBlur->getPingPongTextures()[i], winWidth * bloomK, winHeight * bloomK);
-        updateTexture(cocBlur->getPingPongTextures()[i], winWidth * dofK, winHeight * dofK);
-        updateTexture(dofBlur->getPingPongTextures()[i], winWidth * dofK, winHeight * dofK);
-    }
-
-    updateTexture(cocTex, winWidth * dofK, winHeight * dofK);
-}
-
-/**
- * To correctly display the scene when changing the window size
- */
 void window_size_callback(GLFWwindow* window, int width, int height) {
     winWidth = width;
     winHeight = height;
 
-    rbo->bind();
-    rbo->setDimensions(width, height);
-    rbo->update();
-    rbo->unbind();
-
-    updateRenderTextures();
+    resize();
 
     camera.setAspectRatio((float)winWidth / (float)winHeight);
     camera.perspective();
@@ -363,7 +344,7 @@ void initShaders() {
     auto programFromConfig = [](ShaderProgramPtr &program, const string &configName) {
         ShaderProgramManager manager;
         manager.importFromFile(resources "programs/" + configName + ".conf.json");
-        program = manager.createProgram();
+        program = manager.create();
         program->loadActiveLocations();
     };
 
@@ -398,22 +379,24 @@ void initShaders() {
     lightManager.writeShadowDiskRadiusMin(diskRadius_min);
     lightManager.unbindBuffer();
 
-    skyboxRenderer = make_shared<CubeRenderer>(skyboxShader->getLocation(CubemapShader::Vars::InPos));
-    quadRenderer = make_shared<QuadRenderer>(0); // inPosLocation in quad shader is 0
+    skyboxRenderer = PtrMaker::make(skyboxShader->getLocation(CubemapShader::Vars::InPos));
+    quadRenderer = PtrMaker::make(0); // inPosLocation in quad shader is 0
 
-    Framebuffer::create(displayFb, screenspaceFb, bloomSearchFb, cocFb);
-    Renderbuffer::create(rbo);
+    PtrMaker::create(
+        displayFb, screenspaceFb, bloomSearchFb, cocFb,
+        colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex
+    );
 
-    Texture2D::create(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
     ssrValues->setFormat(Texture::RG16F);
     cocTex->setFormat(Texture::Red16F);
 
     TextureCubeManager skyboxManager;
     skyboxManager.importFromFile(resources "textures/skybox/Skybox.conf.json");
-    skybox = skyboxManager.createTexture();
+    skybox = skyboxManager.create();
 
     Texture2D::setParamsMultiple(Texture2D::defaultParams(),
-            colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
+            colorTex.get(), normalTex.get(), ssrValues.get(), positionTex.get(),
+            screenspaceTex.get(), bloomTex.get(), cocTex.get());
 
     TextureCreateInfo createInfo;
     createInfo.format = Texture::RGB16F;
@@ -423,8 +406,8 @@ void initShaders() {
 
     // TODO: shaders get()
     bloomBlur = make_shared<Blur>(createInfo);
-    bloomBlur->setPingPongShaders(bloomBlurHorShader.get(), bloomBlurVertShader.get());
-    bloomBlur->setQuadRenderer(quadRenderer.get());
+    bloomBlur->setPingPongShaders(bloomBlurHorShader, bloomBlurVertShader);
+    bloomBlur->setQuadRenderer(quadRenderer);
     bloomBlur->configureKernel(bloomBlurKernelRadius, bloomBlurKernelSigma);
 
     createInfo.format = Texture::Red16F;
@@ -432,19 +415,18 @@ void initShaders() {
     createInfo.height = winHeight * dofK;
 
     cocBlur = make_shared<Blur>(createInfo);
-    cocBlur->setPingPongShaders(cocBlurHorShader.get(), cocBlurVertShader.get());
-    cocBlur->setQuadRenderer(quadRenderer.get());
+    cocBlur->setPingPongShaders(cocBlurHorShader, cocBlurVertShader);
+    cocBlur->setQuadRenderer(quadRenderer);
     cocBlur->configureKernel(cocBlurKernelRadius, cocBlurKernelSigma);
 
     createInfo.format = Texture::RGB16F;
 
     dofBlur = make_shared<Blur>(createInfo);
-    dofBlur->setPingPongShaders(dofBlurHorShader.get(), dofBlurVertShader.get());
-    dofBlur->setQuadRenderer(quadRenderer.get());
+    dofBlur->setPingPongShaders(dofBlurHorShader, dofBlurVertShader);
+    dofBlur->setQuadRenderer(quadRenderer);
     dofBlur->configureKernel(dofBlurKernelRadius, dofBlurKernelSigma);
 
-    updateRenderTextures();
-
+    RenderbufferPtr rbo = PtrMaker::make();
     rbo->bind();
     rbo->setDimensions(winWidth, winHeight);
     rbo->setFormat(Texture::DepthComponent);
@@ -453,17 +435,21 @@ void initShaders() {
 
     displayFb->bind();
     displayFb->attachRenderbuffer(rbo, Framebuffer::DepthAttachment);
+    displayFb->addOutputList(); // 2-nd list
 
-    displayFb->addOutput(0, Framebuffer::ColorAttachmentZero + 0);
-    displayFb->addOutput(1, Framebuffer::ColorAttachmentZero + 1);
-    displayFb->addOutput(2, Framebuffer::ColorAttachmentZero + 2);
-    displayFb->addOutput(3, Framebuffer::ColorAttachmentZero + 3);
+    {
+        auto &list = displayFb->getOutputList(0);
+        list.addColor(0);
+        list.addColor(1);
+        list.addColor(2);
+        list.addColor(3);
+    }
 
-    displayFb->addAttachmentsList();
-    displayFb->setActiveAttachmentsList(1);
-    displayFb->addOutput(0, Framebuffer::ColorAttachmentZero + 0);
-    displayFb->addOutput(2, Framebuffer::ColorAttachmentZero + 2);
-    // displayFb->update(); // not need here because it will be called each frame
+    {
+        auto &list = displayFb->getOutputList(1);
+        list.addColor(0);
+        list.addColor(2);
+    }
 
     displayFb->attachTexture(colorTex, Framebuffer::ColorAttachmentZero + 0);
     displayFb->attachTexture(normalTex, Framebuffer::ColorAttachmentZero + 1);
@@ -510,6 +496,8 @@ void initShaders() {
     ssrShader->setInt(SSRShader::Vars::SSRValuesMap, 2);
     ssrShader->setInt(SSRShader::Vars::PositionMap, 3);
     ssrShader->unbind();
+
+    resize();
 }
 
 /**
@@ -627,12 +615,6 @@ void initDOF() {
  * Cleans memory before exit
  */
 void recycleAll() {
-    Framebuffer::destroy(displayFb, screenspaceFb, bloomSearchFb, cocFb);
-
-    Texture2D::destroy(colorTex, normalTex, ssrValues, positionTex, screenspaceTex, bloomTex, cocTex);
-
-    Renderbuffer::destroy(rbo);
-
     Engine::destroy();
 }
 
@@ -767,7 +749,7 @@ void renderToDepthMap(uint index) {
  */
 void render() {
     displayFb->bind();
-    displayFb->setActiveAttachmentsList(0);
+    displayFb->setActiveOutputList(0);
     displayFb->update();
     displayFb->clear(Framebuffer::ColorBuffer | Framebuffer::DepthBuffer);
 
@@ -785,7 +767,7 @@ void render() {
 	    drawModel(lamps[i]);
 
     // render skybox
-    displayFb->setActiveAttachmentsList(1);
+    displayFb->setActiveOutputList(1);
     displayFb->update();
 
     // TODO: Engine::DepthTest::LessOrEqual
@@ -814,7 +796,7 @@ void render() {
     bloomSearchShader->bind();
     screenspaceTex->use(0);
     quadRenderer->draw();
-    bloomBlur->makeBlur(bloomTex);
+    bloomBlur->makeBlur(bloomTex.get());
 
     Engine::setViewport(winWidth * dofK, winHeight * dofK);
     cocFb->bind();
@@ -822,8 +804,8 @@ void render() {
     positionTex->use(0);
     quadRenderer->draw();
 
-    cocBlur->makeBlur(cocTex);
-    dofBlur->makeBlur(screenspaceTex);
+    cocBlur->makeBlur(cocTex.get());
+    dofBlur->makeBlur(screenspaceTex.get());
     Engine::setViewport(winWidth, winHeight);
 
     Engine::defaultFramebuffer()->bind();
@@ -948,13 +930,13 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
         auto dFramebuffer = dirLamps[0].getShadowFramebuffer();
         dFramebuffer->bind();
         auto dPixelsData = dFramebuffer->getAllPixels2D(Framebuffer::DepthAttachment);
-        TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "dir_depth.bmp"), dPixelsData, 3);
+        TextureTools::save(Path::join(Path::getWorkingDirectory(), "dir_depth.bmp"), dPixelsData, 3);
         dFramebuffer->unbind();
 
         auto pFramebuffer = pointLamps[0].getShadowFramebuffer();
         pFramebuffer->bind();
         auto pPixelsData = pFramebuffer->getAllPixelsCube(TextureCube::Face::Right, Framebuffer::DepthAttachment);
-        TextureTools::saveImage(Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), pPixelsData, 3);
+        TextureTools::save(Path::join(Path::getWorkingDirectory(), "point_depth.bmp"), pPixelsData, 3);
         pFramebuffer->unbind();
 
         cout << "Depth map data saved\n";
