@@ -29,7 +29,7 @@
 #include <algine/std/camera/FPSCameraController.h>
 #include <algine/std/rotator/EulerRotator.h>
 #include <algine/std/model/Model.h>
-#include <algine/std/model/ShapeLoader.h>
+#include <algine/std/model/ShapeManager.h>
 #include <algine/std/lighting/DirLamp.h>
 #include <algine/std/lighting/PointLamp.h>
 #include <algine/std/lighting/LightingManager.h>
@@ -91,9 +91,9 @@ LightingManager lightManager;
 CubeRendererPtr skyboxRenderer;
 QuadRendererPtr quadRenderer;
 
-shared_ptr<Blur> bloomBlur;
-shared_ptr<Blur> dofBlur;
-shared_ptr<Blur> cocBlur;
+Ptr<Blur> bloomBlur;
+Ptr<Blur> dofBlur;
+Ptr<Blur> cocBlur;
 
 FramebufferPtr displayFb;
 FramebufferPtr screenspaceFb;
@@ -223,30 +223,27 @@ void createDirLamp(DirLamp &result,
 void
 createShapes(const string &path, size_t id, bool inverseNormals = false, bool enableBones = false)
 {
-    ShapeLoader shapeLoader;
-    shapeLoader.setModelPath(path);
+    ShapeManager manager;
+    manager.setModelPath(path);
 
     if (inverseNormals)
-        shapeLoader.addParam(ShapeLoader::Param::InverseNormals);
+        manager.addParam(ShapeManager::Param::InverseNormals);
+
     if (!enableBones)
-        shapeLoader.addParam(ShapeLoader::Param::DisableBones);
+        manager.addParam(ShapeManager::Param::DisableBones);
 
-    shapeLoader.addParams({
-        ShapeLoader::Param::Triangulate, ShapeLoader::Param::SortByPolygonType,
-        ShapeLoader::Param::CalcTangentSpace, ShapeLoader::Param::JoinIdenticalVertices,
-        ShapeLoader::Param::PrepareAllAnimations
+    manager.addParams({
+        ShapeManager::Param::Triangulate, ShapeManager::Param::SortByPolygonType,
+        ShapeManager::Param::CalcTangentSpace, ShapeManager::Param::JoinIdenticalVertices,
+        ShapeManager::Param::PrepareAllAnimations
     });
-
-    shapeLoader.load();
-
-    shapes[id].reset(shapeLoader.getShape());
 
     {
         InputLayoutShapeLocations locations; // shadow shaders locations
         locations.inPosition = pointShadowShader->getLocation(ShadowShader::Vars::InPos);
         locations.inBoneWeights = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
         locations.inBoneIds = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
-        shapes[id]->createInputLayout(locations); // all shadow shaders have same ids
+        manager.addInputLayoutLocations(locations); // all shadow shaders have same ids
     }
 
     {
@@ -258,8 +255,10 @@ createShapes(const string &path, size_t id, bool inverseNormals = false, bool en
         locations.inBitangent = colorShader->getLocation(ColorShader::Vars::InBitangent);
         locations.inBoneWeights = colorShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
         locations.inBoneIds = colorShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
-        shapes[id]->createInputLayout(locations);
+        manager.addInputLayoutLocations(locations);
     }
+
+    shapes[id] = manager.get();
 }
 
 /* init code begin */
@@ -404,8 +403,7 @@ void initShaders() {
     createInfo.height = winHeight * bloomK;
     createInfo.params = Texture2D::defaultParams();
 
-    // TODO: shaders get()
-    bloomBlur = make_shared<Blur>(createInfo);
+    bloomBlur = PtrMaker::make<Blur>(createInfo);
     bloomBlur->setPingPongShaders(bloomBlurHorShader, bloomBlurVertShader);
     bloomBlur->setQuadRenderer(quadRenderer);
     bloomBlur->configureKernel(bloomBlurKernelRadius, bloomBlurKernelSigma);
@@ -414,14 +412,14 @@ void initShaders() {
     createInfo.width = winWidth * dofK;
     createInfo.height = winHeight * dofK;
 
-    cocBlur = make_shared<Blur>(createInfo);
+    cocBlur = PtrMaker::make<Blur>(createInfo);
     cocBlur->setPingPongShaders(cocBlurHorShader, cocBlurVertShader);
     cocBlur->setQuadRenderer(quadRenderer);
     cocBlur->configureKernel(cocBlurKernelRadius, cocBlurKernelSigma);
 
     createInfo.format = Texture::RGB16F;
 
-    dofBlur = make_shared<Blur>(createInfo);
+    dofBlur = PtrMaker::make<Blur>(createInfo);
     dofBlur->setPingPongShaders(dofBlurHorShader, dofBlurVertShader);
     dofBlur->setQuadRenderer(quadRenderer);
     dofBlur->configureKernel(dofBlurKernelRadius, dofBlurKernelSigma);
