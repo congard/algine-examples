@@ -240,21 +240,21 @@ createShapes(const string &path, size_t id, bool inverseNormals = false, bool en
 
     {
         InputLayoutShapeLocations locations; // shadow shaders locations
-        locations.inPosition = pointShadowShader->getLocation(ShadowShader::Vars::InPos);
-        locations.inBoneWeights = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
-        locations.inBoneIds = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
+        locations.position = pointShadowShader->getLocation(ShadowShader::Vars::InPos);
+        locations.boneWeights = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
+        locations.boneIds = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
         manager.addInputLayoutLocations(locations); // all shadow shaders have same ids
     }
 
     {
         InputLayoutShapeLocations locations; // color shader locations
-        locations.inPosition = colorShader->getLocation(ColorShader::Vars::InPos);
-        locations.inTexCoord = colorShader->getLocation(ColorShader::Vars::InTexCoord);
-        locations.inNormal = colorShader->getLocation(ColorShader::Vars::InNormal);
-        locations.inTangent = colorShader->getLocation(ColorShader::Vars::InTangent);
-        locations.inBitangent = colorShader->getLocation(ColorShader::Vars::InBitangent);
-        locations.inBoneWeights = colorShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
-        locations.inBoneIds = colorShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
+        locations.position = colorShader->getLocation(ColorShader::Vars::InPos);
+        locations.texCoord = colorShader->getLocation(ColorShader::Vars::InTexCoord);
+        locations.normal = colorShader->getLocation(ColorShader::Vars::InNormal);
+        locations.tangent = colorShader->getLocation(ColorShader::Vars::InTangent);
+        locations.bitangent = colorShader->getLocation(ColorShader::Vars::InBitangent);
+        locations.boneWeights = colorShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
+        locations.boneIds = colorShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
         manager.addInputLayoutLocations(locations);
     }
 
@@ -955,6 +955,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
             camera.updateMatrix();
         } else if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT || key == GLFW_KEY_UP || key == GLFW_KEY_DOWN) {
             glm::mat4 r;
+
             if (key == GLFW_KEY_LEFT)
                 manHeadRotator.setYaw(manHeadRotator.getYaw() + glm::radians(5.0f));
             else if (key == GLFW_KEY_RIGHT)
@@ -965,7 +966,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
                 manHeadRotator.setPitch(manHeadRotator.getPitch() - glm::radians(5.0f));
 
             manHeadRotator.rotate(r);
-            shapes[2]->setNodeTransform("Head", r);
+            shapes[2]->setBoneTransform("Head", r);
         }
     }
 }
