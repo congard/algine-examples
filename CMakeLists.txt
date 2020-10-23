@@ -42,7 +42,7 @@ if (WIN32)
             set(libglfw glfw3.dll)
         endif()
 
-        add_custom_command(TARGET algine_examples POST_BUILD
+        add_custom_command(TARGET examples POST_BUILD
                 COMMENT "Creating symlinks to libs..."
                 # algine
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
