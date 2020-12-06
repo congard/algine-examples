@@ -1,0 +1,14 @@
+{
+    "locations": {
+        "bitangent": "inBitangent",
+        "boneIds": "inBoneIds[0]",
+        "boneWeights": "inBoneWeights[0]",
+        "normal": "inNormal",
+        "position": "inPos",
+        "tangent": "inTangent",
+        "texCoord": "inTexCoord"
+    },
+    "shaderProgram": {
+        "name": "colorShader"
+    }
+}

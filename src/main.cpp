@@ -29,7 +29,7 @@
 #include <algine/std/camera/FPSCameraController.h>
 #include <algine/std/rotator/EulerRotator.h>
 #include <algine/std/model/Model.h>
-#include <algine/std/model/ShapeManager.h>
+#include <algine/std/model/ModelManager.h>
 #include <algine/std/lighting/DirLamp.h>
 #include <algine/std/lighting/PointLamp.h>
 #include <algine/std/lighting/LightingManager.h>
@@ -74,12 +74,9 @@ void cursor_pos_callback(GLFWwindow* glfwWindow, double x, double y);
 uint winWidth = 1366, winHeight = 763;
 GLFWwindow* window;
 
-// matrices
-const glm::mat4 *modelMatrix; // model matrix stored in Model::transformation
-
 // models
-shared_ptr<Shape> shapes[shapesCount];
-Model models[modelsCount], lamps[pointLightsCount + dirLightsCount];
+ShapePtr shapes[shapesCount];
+ModelPtr models[modelsCount], lamps[pointLightsCount + dirLightsCount];
 AnimationBlender manAnimationBlender;
 BoneSystemManager boneManager;
 
@@ -220,47 +217,6 @@ void createDirLamp(DirLamp &result,
     lightManager.unbindBuffer();
 }
 
-void
-createShapes(const string &path, size_t id, bool inverseNormals = false, bool enableBones = false)
-{
-    ShapeManager manager;
-    manager.setModelPath(path);
-
-    if (inverseNormals)
-        manager.addParam(ShapeManager::Param::InverseNormals);
-
-    if (!enableBones)
-        manager.addParam(ShapeManager::Param::DisableBones);
-
-    manager.addParams({
-        ShapeManager::Param::Triangulate, ShapeManager::Param::SortByPolygonType,
-        ShapeManager::Param::CalcTangentSpace, ShapeManager::Param::JoinIdenticalVertices,
-        ShapeManager::Param::PrepareAllAnimations
-    });
-
-    {
-        InputLayoutShapeLocations locations; // shadow shaders locations
-        locations.position = pointShadowShader->getLocation(ShadowShader::Vars::InPos);
-        locations.boneWeights = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
-        locations.boneIds = pointShadowShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
-        manager.addInputLayoutLocations(locations); // all shadow shaders have same ids
-    }
-
-    {
-        InputLayoutShapeLocations locations; // color shader locations
-        locations.position = colorShader->getLocation(ColorShader::Vars::InPos);
-        locations.texCoord = colorShader->getLocation(ColorShader::Vars::InTexCoord);
-        locations.normal = colorShader->getLocation(ColorShader::Vars::InNormal);
-        locations.tangent = colorShader->getLocation(ColorShader::Vars::InTangent);
-        locations.bitangent = colorShader->getLocation(ColorShader::Vars::InBitangent);
-        locations.boneWeights = colorShader->getLocation(Module::BoneSystem::Vars::InBoneWeights);
-        locations.boneIds = colorShader->getLocation(Module::BoneSystem::Vars::InBoneIds);
-        manager.addInputLayoutLocations(locations);
-    }
-
-    shapes[id] = manager.get();
-}
-
 /* init code begin */
 
 // NOTE: uncomment if you have issues
@@ -273,9 +229,11 @@ createShapes(const string &path, size_t id, bool inverseNormals = false, bool en
  */
 void initGL() {
     cout << "Starting GLFW context, OpenGL 3.3" << endl;
+
     // Init GLFW
     if (!glfwInit())
         cout << "GLFW init failed";
+
     // Set all the required options for GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -520,74 +478,71 @@ void initCamera() {
 
 // Creating shapes and loading textures
 #define modelsPath resources "models/"
-void initShapes() {
-    createShapes(modelsPath "chess/Classic Chess small.obj", 0, false); // classic chess
-    createShapes(modelsPath "japanese_lamp/japanese_lamp.obj", 1, true); // Japanese lamp
-    createShapes(modelsPath "man/man.fbx", 2, false, true); // animated man
-    createShapes(modelsPath "astroboy/astroboy_walk.dae", 3, false, true);
-}
 
 /**
  * Creating models from created buffers and loaded textures
  */
 void createModels() {
-    // classic chess
-    models[0].setShape(shapes[0].get());
+    auto getModel = [](const string &path)
+    {
+        ModelManager modelManager;
+        modelManager.importFromFile(modelsPath + path);
+
+        return modelManager.get();
+    };
+
+    models[0] = getModel("chess/Classic Chess small.json");
+    models[1] = getModel("man/man.json");
+    models[2] = getModel("astroboy/astroboy_walk.json");
 
     // animated man
-    manAnimationBlender.setShape(shapes[2].get());
+    manAnimationBlender.setShape(models[1]->getShape());
     manAnimationBlender.setFactor(0.25f);
     manAnimationBlender.setLhsAnim(0);
     manAnimationBlender.setRhsAnim(1);
-    models[1].setShape(shapes[2].get());
-    models[1].getAnimator()->setAnimation("Armature|Run");
-    models[1].setX(-2.0f);
-    models[1].translate();
-    models[1].updateMatrix();
-    models[1].setBones(&manAnimationBlender.bones());
 
-    // animated astroboy
-    models[2].setShape(shapes[3].get());
-    models[2].setPitch(glm::radians(-90.0f));
-    models[2].rotate();
-    models[2].setScale(glm::vec3(50.0f));
-    models[2].scale();
-    models[2].setX(2.0f);
-    models[2].translate();
-    models[2].updateMatrix();
+    models[1]->setBones(&manAnimationBlender.bones());
 
     boneManager.setBindingPoint(0);
-    boneManager.setShaderPrograms({colorShader.get(), dirShadowShader.get(), pointShadowShader.get()});
+    boneManager.setShaderPrograms({colorShader.get(), dirShadowShader.get(), pointShadowShader.get()}); // TODO: get()
     boneManager.setMaxModelsCount(2);
     boneManager.init();
     boneManager.getBlockBufferStorage().bind();
-    boneManager.addModels({&models[1], &models[2]});
+    boneManager.addModels({models[1].get(), models[2].get()}); // TODO: get()
 }
 
 /**
  * Creating light sources
  */
 void initLamps() {
-    lamps[0].setShape(shapes[1].get());
-    pointLamps[0].mptr = &lamps[0];
-    createPointLamp(pointLamps[0], glm::vec3(0.0f, 8.0f, 15.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0);
-    lamps[0].translate();
-    lamps[0].updateMatrix();
+    ShapeManager manager;
+    manager.importFromFile(modelsPath "japanese_lamp/japanese_lamp.shape.json");
 
-    lamps[1].setShape(shapes[1].get());
-    dirLamps[0].mptr = &lamps[1];
+    auto lampShape = manager.get();
+
+    lamps[0] = PtrMaker::make();
+    lamps[0]->setShape(lampShape);
+    pointLamps[0].mptr = lamps[0].get(); // TODO: get()
+    createPointLamp(pointLamps[0], {0.0f, 8.0f, 15.0f}, {1.0f, 1.0f, 1.0f}, 0);
+    lamps[0]->translate();
+    lamps[0]->transform();
+
+    lamps[1] = PtrMaker::make();
+    lamps[1]->setShape(lampShape);
+    dirLamps[0].mptr = lamps[1].get();
     createDirLamp(dirLamps[0],
-            glm::vec3(0.0f, 8.0f, -15.0f),
-            glm::vec3(glm::radians(180.0f), glm::radians(30.0f), 0.0f),
-            glm::vec3(253.0f / 255.0f, 184.0f / 255.0f, 19.0f / 255.0f), 0);
-    lamps[1].translate();
-    lamps[1].updateMatrix();
+            {0.0f, 8.0f, -15.0f},
+            {glm::radians(180.0f), glm::radians(30.0f), 0.0f},
+            {253.0f / 255.0f, 184.0f / 255.0f, 19.0f / 255.0f}, 0);
+    lamps[1]->translate();
+    lamps[1]->transform();
 }
 
 void initShadowMaps() {
     colorShader->bind();
 
     lightManager.configureShadowMapping();
+
     for (usize i = 0; i < pointLightsCount; i++)
         lightManager.pushShadowMap(pointLamps[i], i);
     for (usize i = 0; i < dirLightsCount; i++)
@@ -619,28 +574,29 @@ void recycleAll() {
 void sendLampsData() {
     lightManager.bindBuffer();
     colorShader->setVec3(ColorShader::Vars::CameraPos, camera.getPos());
+
     for (size_t i = 0; i < pointLightsCount; i++)
         lightManager.writePos(pointLamps[i], i);
+
     for (size_t i = 0; i < dirLightsCount; i++)
         lightManager.writePos(dirLamps[i], i);
+
     lightManager.unbindBuffer();
 }
 
-#define value *
-
 /* --- matrices --- */
-glm::mat4 getMVPMatrix() {
-    return camera.getProjectionMatrix() * camera.getViewMatrix() * value modelMatrix;
+glm::mat4 getMVPMatrix(const glm::mat4 &modelMatrix) {
+    return camera.getProjectionMatrix() * camera.getViewMatrix() * modelMatrix;
 }
 
-glm::mat4 getMVMatrix() {
-    return camera.getViewMatrix() * value modelMatrix;
+glm::mat4 getMVMatrix(const glm::mat4 &modelMatrix) {
+    return camera.getViewMatrix() * modelMatrix;
 }
 
-void updateMatrices() {
-    colorShader->setMat4(ColorShader::Vars::MVPMatrix, getMVPMatrix());
-    colorShader->setMat4(ColorShader::Vars::MVMatrix, getMVMatrix());
-    colorShader->setMat4(ColorShader::Vars::ModelMatrix, value modelMatrix);
+void updateMatrices(const glm::mat4 &modelMatrix) {
+    colorShader->setMat4(ColorShader::Vars::MVPMatrix, getMVPMatrix(modelMatrix));
+    colorShader->setMat4(ColorShader::Vars::MVMatrix, getMVMatrix(modelMatrix));
+    colorShader->setMat4(ColorShader::Vars::ModelMatrix, modelMatrix);
     colorShader->setMat4(ColorShader::Vars::ViewMatrix, camera.getViewMatrix());
 }
 
@@ -649,48 +605,53 @@ void updateMatrices() {
  * if point light, leave mat empty, but if dir light - it must be light space matrix
  */
 void drawModelDM(Model &model, ShaderProgramPtr &program, const glm::mat4 &mat = glm::mat4(1.0f)) {
-    Shape *shape = model.getShape();
+    auto &shape = model.getShape();
     shape->inputLayouts[0]->bind();
 
     boneManager.linkBuffer(&model);
 
     program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model.m_transform);
     
-    for (auto & mesh : shape->meshes)
+    for (auto & mesh : shape->meshes) {
         Engine::drawElements(mesh.start, mesh.count);
+    }
 }
 
 /**
  * Draws model
  */
-inline void useNotNull(Texture2D *const tex, const uint slot) {
-    if (tex != nullptr)
-        tex->use(slot);
-    else
-        Engine::defaultTexture2D()->use(slot);
-}
-
 void drawModel(Model &model) {
-    Shape *shape = model.getShape();
+    auto &shape = model.getShape();
     shape->inputLayouts[1]->bind();
 
     boneManager.linkBuffer(&model);
 
-    modelMatrix = &model.m_transform;
-	updateMatrices();
-    for (auto & mesh : shape->meshes) {
-        Material &material = mesh.material;
-        useNotNull(material.ambientTexture.get(), 0);
-        useNotNull(material.diffuseTexture.get(), 1);
-        useNotNull(material.specularTexture.get(), 2);
-        useNotNull(material.normalTexture.get(), 3);
-        useNotNull(material.reflectionTexture.get(), 4);
-        useNotNull(material.jitterTexture.get(), 5);
+	updateMatrices(model.transformation());
 
-        colorShader->setFloat(Module::Material::Vars::AmbientStrength, mesh.material.ambientStrength);
-        colorShader->setFloat(Module::Material::Vars::DiffuseStrength, mesh.material.diffuseStrength);
-        colorShader->setFloat(Module::Material::Vars::SpecularStrength, mesh.material.specularStrength);
-        colorShader->setFloat(Module::Material::Vars::Shininess, mesh.material.shininess);
+    for (auto & mesh : shape->meshes) {
+        using namespace Module::Material::Vars;
+
+        auto useNotNull = [](const Texture2DPtr &tex, const uint slot)
+        {
+            if (tex != nullptr) {
+                tex->use(slot);
+            } else {
+                Engine::defaultTexture2D()->use(slot);
+            }
+        };
+
+        Material &material = mesh.material;
+        useNotNull(material.ambientTexture, 0);
+        useNotNull(material.diffuseTexture, 1);
+        useNotNull(material.specularTexture, 2);
+        useNotNull(material.normalTexture, 3);
+        useNotNull(material.reflectionTexture, 4);
+        useNotNull(material.jitterTexture, 5);
+
+        colorShader->setFloat(AmbientStrength, mesh.material.ambientStrength);
+        colorShader->setFloat(DiffuseStrength, mesh.material.diffuseStrength);
+        colorShader->setFloat(SpecularStrength, mesh.material.specularStrength);
+        colorShader->setFloat(Shininess, mesh.material.shininess);
 
         Engine::drawElements(mesh.start, mesh.count);
     }
@@ -709,7 +670,7 @@ void renderToDepthCubemap(const uint index) {
 
 	// drawing models
     for (size_t i = 0; i < modelsCount; i++)
-        drawModelDM(models[i], pointShadowShader);
+        drawModelDM(*models[i].get(), pointShadowShader);
 
 	// drawing lamps
 	for (GLuint i = 0; i < pointLightsCount; i++) {
@@ -729,7 +690,7 @@ void renderToDepthMap(uint index) {
 
 	// drawing models
     for (uint i = 0; i < modelsCount; i++)
-        drawModelDM(models[i], dirShadowShader, dirLamps[index].getLightSpaceMatrix());
+        drawModelDM(*models[i].get(), dirShadowShader, dirLamps[index].getLightSpaceMatrix());
 
 	// drawing lamps
 	for (uint i = 0; i < dirLightsCount; i++) {
@@ -760,9 +721,10 @@ void render() {
 
     // drawing
     for (size_t i = 0; i < modelsCount; i++)
-        drawModel(models[i]);
+        drawModel(*models[i].get());
+
 	for (size_t i = 0; i < pointLightsCount + dirLightsCount; i++)
-	    drawModel(lamps[i]);
+	    drawModel(*lamps[i].get());
 
     // render skybox
     displayFb->setActiveOutputList(1);
@@ -820,9 +782,9 @@ void render() {
 void display() {
     // animate
     for (usize i = 0; i < modelsCount; i++) {
-        if (models[i].getShape()->isBonesPresent()) {
-            auto &animations = models[i].getShape()->animations;
-            auto animator = models[i].getAnimator();
+        if (models[i]->getShape()->isBonesPresent()) {
+            auto &animations = models[i]->getShape()->animations;
+            auto animator = models[i]->getAnimator();
 
             for (uint j = 0; j < animations.size(); j++) {
                 animator->setAnimationIndex(j);
@@ -860,11 +822,12 @@ void display() {
 
 void animate_scene() {
     glm::mat3 rotate = glm::mat3(glm::rotate(glm::mat4(), glm::radians(0.01f), glm::vec3(0, 1, 0)));
+
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(1));
         pointLamps[0].setPos(pointLamps[0].m_pos * rotate);
         pointLamps[0].translate();
-        pointLamps[0].mptr->updateMatrix();
+        pointLamps[0].mptr->transform();
     }
 }
 
@@ -873,7 +836,6 @@ int main() {
     initGL();
     initShaders();
     initCamera();
-    initShapes();
     createModels();
     initLamps();
     initShadowMaps();
@@ -885,6 +847,7 @@ int main() {
 
     double currentTime, previousTime = glfwGetTime();
     size_t frameCount = 0, frames = 0, passes = 0;
+
     while (!glfwWindowShouldClose(window)) {
         currentTime = glfwGetTime();
         frameCount++;
@@ -966,7 +929,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
                 manHeadRotator.setPitch(manHeadRotator.getPitch() - glm::radians(5.0f));
 
             manHeadRotator.rotate(r);
-            shapes[2]->setBoneTransform("Head", r);
+            models[1]->getShape()->setBoneTransform("Head", r);
         }
     }
 }

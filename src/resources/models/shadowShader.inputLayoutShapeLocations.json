@@ -1,0 +1,10 @@
+{
+    "locations": {
+        "boneIds": "inBoneIds[0]",
+        "boneWeights": "inBoneWeights[0]",
+        "position": "a_Position"
+    },
+    "shaderProgram": {
+        "name": "pointShadowShader"
+    }
+}

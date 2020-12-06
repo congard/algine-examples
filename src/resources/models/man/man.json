@@ -1,0 +1,37 @@
+{
+    "access": "private",
+    "activeAnimation": "Armature|Run",
+    "pos": [
+        -2.0,
+        0.0,
+        0.0
+    ],
+    "rotator": {
+        "pitch": 0.0,
+        "roll": 0.0,
+        "type": "euler",
+        "yaw": 0.0
+    },
+    "scale": [
+        1.0,
+        1.0,
+        1.0
+    ],
+    "shape": {
+        "dump": {
+            "access": "private",
+            "inputLayoutLocations": [
+                "../shadowShader.inputLayoutShapeLocations.json",
+                "../colorShader.inputLayoutShapeLocations.json"
+            ],
+            "params": [
+                "triangulate",
+                "sortByPolygonType",
+                "calcTangentSpace",
+                "joinIdenticalVertices",
+                "prepareAllAnimations"
+            ],
+            "path": "man.fbx"
+        }
+    }
+}

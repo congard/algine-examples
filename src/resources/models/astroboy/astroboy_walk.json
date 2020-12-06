@@ -1,0 +1,36 @@
+{
+    "access": "private",
+    "pos": [
+        2.0,
+        0.0,
+        0.0
+    ],
+    "rotator": {
+        "pitch": -1.570796,
+        "roll": 0.0,
+        "type": "euler",
+        "yaw": 0.0
+    },
+    "scale": [
+        50.0,
+        50.0,
+        50.0
+    ],
+    "shape": {
+        "dump": {
+            "access": "private",
+            "inputLayoutLocations": [
+                "../shadowShader.inputLayoutShapeLocations.json",
+                "../colorShader.inputLayoutShapeLocations.json"
+            ],
+            "params": [
+                "triangulate",
+                "sortByPolygonType",
+                "calcTangentSpace",
+                "joinIdenticalVertices",
+                "prepareAllAnimations"
+            ],
+            "path": "astroboy_walk.dae"
+        }
+    }
+}

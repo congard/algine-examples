@@ -1,0 +1,16 @@
+{
+    "access": "private",
+    "inputLayoutLocations": [
+        "../shadowShader.inputLayoutShapeLocations.json",
+        "../colorShader.inputLayoutShapeLocations.json"
+    ],
+    "params": [
+        "triangulate",
+        "sortByPolygonType",
+        "calcTangentSpace",
+        "joinIdenticalVertices",
+        "disableBones",
+        "inverseNormals"
+    ],
+    "path": "japanese_lamp.obj"
+}

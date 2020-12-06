@@ -1,5 +1,6 @@
 {
-    "access": "private",
+    "access": "public",
+    "name": "colorShader",
     "definitions": {
         "MAX_BONES": "64",
         "MAX_BONE_ATTRIBS_PER_VERTEX": "1",

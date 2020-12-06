@@ -1,5 +1,6 @@
 {
-    "access": "private",
+    "access": "public",
+    "name": "pointShadowShader",
     "params": [
         "ALGINE_SHADOW_MAPPING_TYPE_POINT_LIGHTING"
     ],
