@@ -322,9 +322,8 @@ void initShaders() {
 
     cout << "Compilation done\n";
 
-    // TODO: shaders get()
-    lightManager.setLightShader(colorShader.get());
-    lightManager.setPointLightShadowShader(pointShadowShader.get());
+    lightManager.setLightShader(colorShader);
+    lightManager.setPointLightShadowShader(pointShadowShader);
     lightManager.setBindingPoint(1);
     lightManager.init();
 
@@ -504,11 +503,11 @@ void createModels() {
     models[1]->setBones(&manAnimationBlender.bones());
 
     boneManager.setBindingPoint(0);
-    boneManager.setShaderPrograms({colorShader.get(), dirShadowShader.get(), pointShadowShader.get()}); // TODO: get()
+    boneManager.setShaderPrograms({colorShader, dirShadowShader, pointShadowShader});
     boneManager.setMaxModelsCount(2);
     boneManager.init();
     boneManager.getBlockBufferStorage().bind();
-    boneManager.addModels({models[1].get(), models[2].get()}); // TODO: get()
+    boneManager.addModels({models[1], models[2]});
 }
 
 /**
@@ -522,14 +521,14 @@ void initLamps() {
 
     lamps[0] = PtrMaker::make();
     lamps[0]->setShape(lampShape);
-    pointLamps[0].mptr = lamps[0].get(); // TODO: get()
+    pointLamps[0].mptr = lamps[0];
     createPointLamp(pointLamps[0], {0.0f, 8.0f, 15.0f}, {1.0f, 1.0f, 1.0f}, 0);
     lamps[0]->translate();
     lamps[0]->transform();
 
     lamps[1] = PtrMaker::make();
     lamps[1]->setShape(lampShape);
-    dirLamps[0].mptr = lamps[1].get();
+    dirLamps[0].mptr = lamps[1];
     createDirLamp(dirLamps[0],
             {0.0f, 8.0f, -15.0f},
             {glm::radians(180.0f), glm::radians(30.0f), 0.0f},
@@ -604,13 +603,13 @@ void updateMatrices(const glm::mat4 &modelMatrix) {
  * Draws model in depth map<br>
  * if point light, leave mat empty, but if dir light - it must be light space matrix
  */
-void drawModelDM(Model &model, ShaderProgramPtr &program, const glm::mat4 &mat = glm::mat4(1.0f)) {
-    auto &shape = model.getShape();
+void drawModelDM(ModelPtr &model, ShaderProgramPtr &program, const glm::mat4 &mat = glm::mat4(1.0f)) {
+    auto &shape = model->getShape();
     shape->inputLayouts[0]->bind();
 
-    boneManager.linkBuffer(&model);
+    boneManager.linkBuffer(model);
 
-    program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model.m_transform);
+    program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model->transformation());
     
     for (auto & mesh : shape->meshes) {
         Engine::drawElements(mesh.start, mesh.count);
@@ -620,13 +619,13 @@ void drawModelDM(Model &model, ShaderProgramPtr &program, const glm::mat4 &mat =
 /**
  * Draws model
  */
-void drawModel(Model &model) {
-    auto &shape = model.getShape();
+void drawModel(ModelPtr &model) {
+    auto &shape = model->getShape();
     shape->inputLayouts[1]->bind();
 
-    boneManager.linkBuffer(&model);
+    boneManager.linkBuffer(model);
 
-	updateMatrices(model.transformation());
+	updateMatrices(model->transformation());
 
     for (auto & mesh : shape->meshes) {
         using namespace Module::Material::Vars;
@@ -669,13 +668,15 @@ void renderToDepthCubemap(const uint index) {
 	lightManager.pushShadowShaderMatrices(pointLamps[index]);
 
 	// drawing models
-    for (size_t i = 0; i < modelsCount; i++)
-        drawModelDM(*models[i].get(), pointShadowShader);
+    for (uint i = 0; i < modelsCount; i++)
+        drawModelDM(models[i], pointShadowShader);
 
 	// drawing lamps
-	for (GLuint i = 0; i < pointLightsCount; i++) {
-		if (i == index) continue;
-        drawModelDM(*pointLamps[i].mptr, pointShadowShader);
+	for (uint i = 0; i < pointLightsCount; i++) {
+		if (i == index)
+		    continue;
+
+        drawModelDM(pointLamps[i].mptr, pointShadowShader);
 	}
 
 	pointLamps[index].end();
@@ -690,14 +691,14 @@ void renderToDepthMap(uint index) {
 
 	// drawing models
     for (uint i = 0; i < modelsCount; i++)
-        drawModelDM(*models[i].get(), dirShadowShader, dirLamps[index].getLightSpaceMatrix());
+        drawModelDM(models[i], dirShadowShader, dirLamps[index].getLightSpaceMatrix());
 
 	// drawing lamps
 	for (uint i = 0; i < dirLightsCount; i++) {
 		if (i == index)
 		    continue;
 
-        drawModelDM(*dirLamps[i].mptr, dirShadowShader, dirLamps[index].getLightSpaceMatrix());
+        drawModelDM(dirLamps[i].mptr, dirShadowShader, dirLamps[index].getLightSpaceMatrix());
 	}
 
 	dirLamps[index].end();
@@ -721,10 +722,10 @@ void render() {
 
     // drawing
     for (size_t i = 0; i < modelsCount; i++)
-        drawModel(*models[i].get());
+        drawModel(models[i]);
 
 	for (size_t i = 0; i < pointLightsCount + dirLightsCount; i++)
-	    drawModel(*lamps[i].get());
+	    drawModel(lamps[i]);
 
     // render skybox
     displayFb->setActiveOutputList(1);
