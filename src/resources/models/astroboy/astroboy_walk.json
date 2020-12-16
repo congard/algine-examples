@@ -1,5 +1,6 @@
 {
     "access": "private",
+    "activatedAnimations": "all",
     "pos": [
         2.0,
         0.0,
@@ -27,8 +28,7 @@
                 "triangulate",
                 "sortByPolygonType",
                 "calcTangentSpace",
-                "joinIdenticalVertices",
-                "prepareAllAnimations"
+                "joinIdenticalVertices"
             ],
             "path": "astroboy_walk.dae"
         }
