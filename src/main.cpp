@@ -495,7 +495,7 @@ void createModels() {
     models[2] = getModel("astroboy/astroboy_walk.json");
 
     // animated man
-    manAnimationBlender.setShape(models[1]->getShape());
+    manAnimationBlender.setModel(models[1]);
     manAnimationBlender.setFactor(0.25f);
     manAnimationBlender.setLhsAnim(0);
     manAnimationBlender.setRhsAnim(1);
@@ -544,6 +544,7 @@ void initShadowMaps() {
 
     for (usize i = 0; i < pointLightsCount; i++)
         lightManager.pushShadowMap(pointLamps[i], i);
+
     for (usize i = 0; i < dirLightsCount; i++)
         lightManager.pushShadowMap(dirLamps[i], i);
 
@@ -605,13 +606,13 @@ void updateMatrices(const glm::mat4 &modelMatrix) {
  */
 void drawModelDM(ModelPtr &model, ShaderProgramPtr &program, const glm::mat4 &mat = glm::mat4(1.0f)) {
     auto &shape = model->getShape();
-    shape->inputLayouts[0]->bind();
+    shape->getInputLayout(0)->bind();
 
     boneManager.linkBuffer(model);
 
     program->setMat4(ShadowShader::Vars::TransformationMatrix, mat * model->transformation());
     
-    for (auto & mesh : shape->meshes) {
+    for (auto &mesh : shape->getMeshes()) {
         Engine::drawElements(mesh.start, mesh.count);
     }
 }
@@ -621,13 +622,13 @@ void drawModelDM(ModelPtr &model, ShaderProgramPtr &program, const glm::mat4 &ma
  */
 void drawModel(ModelPtr &model) {
     auto &shape = model->getShape();
-    shape->inputLayouts[1]->bind();
+    shape->getInputLayout(1)->bind();
 
     boneManager.linkBuffer(model);
 
 	updateMatrices(model->transformation());
 
-    for (auto & mesh : shape->meshes) {
+    for (auto &mesh : shape->getMeshes()) {
         using namespace Module::Material::Vars;
 
         auto useNotNull = [](const Texture2DPtr &tex, const uint slot)
@@ -639,7 +640,7 @@ void drawModel(ModelPtr &model) {
             }
         };
 
-        Material &material = mesh.material;
+        const auto &material = mesh.material;
         useNotNull(material.ambientTexture, 0);
         useNotNull(material.diffuseTexture, 1);
         useNotNull(material.specularTexture, 2);
@@ -659,7 +660,7 @@ void drawModel(ModelPtr &model) {
 /**
  * Renders to depth cubemap
  */
-void renderToDepthCubemap(const uint index) {
+void renderToDepthCubemap(uint index) {
 	pointLamps[index].begin();
     pointLamps[index].updateMatrix();
     pointLamps[index].getShadowFramebuffer()->clearDepthBuffer();
@@ -784,10 +785,10 @@ void display() {
     // animate
     for (usize i = 0; i < modelsCount; i++) {
         if (models[i]->getShape()->isBonesPresent()) {
-            auto &animations = models[i]->getShape()->animations;
+            auto animationsAmount = models[i]->getShape()->getAnimationsAmount();
             auto animator = models[i]->getAnimator();
 
-            for (uint j = 0; j < animations.size(); j++) {
+            for (uint j = 0; j < animationsAmount; j++) {
                 animator->setAnimationIndex(j);
                 animator->animate(glfwGetTime());
             }
@@ -930,7 +931,7 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
                 manHeadRotator.setPitch(manHeadRotator.getPitch() - glm::radians(5.0f));
 
             manHeadRotator.rotate(r);
-            models[1]->getShape()->setBoneTransform("Head", r);
+            models[1]->setBoneTransform("Head", r);
         }
     }
 }
