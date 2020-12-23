@@ -472,7 +472,7 @@ void initCamera() {
 
     camera.updateMatrix();
     
-    camController.camera = &camera;
+    camController.setCamera(&camera);
 }
 
 // Creating shapes and loading textures
@@ -922,13 +922,13 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
             glm::mat4 r;
 
             if (key == GLFW_KEY_LEFT)
-                manHeadRotator.setYaw(manHeadRotator.getYaw() + glm::radians(5.0f));
+                manHeadRotator.changeYaw(glm::radians(5.0f));
             else if (key == GLFW_KEY_RIGHT)
-                manHeadRotator.setYaw(manHeadRotator.getYaw() - glm::radians(5.0f));
+                manHeadRotator.changeYaw(-glm::radians(5.0f));
             else if (key == GLFW_KEY_UP)
-                manHeadRotator.setPitch(manHeadRotator.getPitch() + glm::radians(5.0f));
+                manHeadRotator.changePitch(glm::radians(5.0f));
             else // GLFW_KEY_DOWN
-                manHeadRotator.setPitch(manHeadRotator.getPitch() - glm::radians(5.0f));
+                manHeadRotator.changePitch(-glm::radians(5.0f));
 
             manHeadRotator.rotate(r);
             models[1]->setBoneTransform("Head", r);
