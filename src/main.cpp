@@ -25,8 +25,7 @@
 #include <algine/core/texture/TextureCubeManager.h>
 #include <algine/core/texture/TextureTools.h>
 
-#include <algine/std/camera/Camera.h>
-#include <algine/std/camera/FPSCameraController.h>
+#include <algine/std/camera/FPSCamera.h>
 #include <algine/std/rotator/EulerRotator.h>
 #include <algine/std/model/Model.h>
 #include <algine/std/model/ModelManager.h>
@@ -120,8 +119,8 @@ ShaderProgramPtr blendShader;
 
 MouseEventListener mouseEventListener;
 
-Camera camera;
-FPSCameraController camController;
+FPSCamera camera;
+glm::vec2 lastMousePos;
 
 EulerRotator manHeadRotator;
 
@@ -471,8 +470,6 @@ void initCamera() {
     camera.translate();
 
     camera.updateMatrix();
-    
-    camController.setCamera(&camera);
 }
 
 // Creating shapes and loading textures
@@ -908,13 +905,13 @@ void key_callback(GLFWwindow* glfwWindow, int key, int scancode, int action, int
     } else if (action == GLFW_REPEAT || action == GLFW_RELEASE) {
         if (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D) {
             if (key == GLFW_KEY_W)
-                camController.goForward();
+                camera.goForward();
             else if (key == GLFW_KEY_S)
-                camController.goBack();
+                camera.goBack();
             else if (key == GLFW_KEY_A)
-                camController.goLeft();
+                camera.goLeft();
             else if (key == GLFW_KEY_D)
-                camController.goRight();
+                camera.goRight();
 
             camera.translate();
             camera.updateMatrix();
@@ -965,16 +962,21 @@ void cursor_pos_callback(GLFWwindow* glfwWindow, double x, double y) {
 void mouse_callback(MouseEvent *event) {
     switch(event->action) {
         case MouseEventListener::ActionDown:
-            camController.setMousePos(event->getX(), event->getY());
+            lastMousePos = {event->getX(), event->getY()};
             break;
-        case MouseEventListener::ActionMove:
+        case MouseEventListener::ActionMove: {
             if (!event->listener->getLeftButton().isPressed)
                 break;
-            
-            camController.mouseMove(event->getX(), event->getY());
+
+            glm::vec2 mousePos = {event->getX(), event->getY()};
+
+            camera.changeRotation({mousePos.y - lastMousePos.y, mousePos.x - lastMousePos.x, 0});
             camera.rotate();
             camera.updateMatrix();
+
+            lastMousePos = mousePos;
             break;
+        }
         case MouseEventListener::ActionLongClick:
             cout << "Long click " << event->button << "\n";
             break;
