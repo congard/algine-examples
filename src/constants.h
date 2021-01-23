@@ -7,8 +7,6 @@
 #define resources "src/resources/"
 
 namespace algine {
-constexpr uint pointLightsCount = 1;
-constexpr uint dirLightsCount = 1;
 constexpr uint pointLightsLimit = 4;
 constexpr uint dirLightsLimit = 4;
 constexpr uint maxBoneAttribsPerVertex = 1;

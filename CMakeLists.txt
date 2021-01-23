@@ -13,21 +13,14 @@ include_directories(lib/algine/contrib/glm)
 include_directories(lib/algine/contrib/glew/include)
 include_directories(lib/algine/contrib)
 
-if (USE_SYSTEM_GLFW)
-    find_package(glfw3 REQUIRED)
-    message(STATUS "Algine examples: use system GLFW")
-else()
-    set(GLFW_BUILD_DOCS OFF)
-    set(GLFW_BUILD_EXAMPLES OFF)
-    set(GLFW_BUILD_TESTS OFF)
+add_executable(examples
+        src/Main.cpp
+        src/ColorShader.h src/BlendShader.h src/constants.h
+        src/ExampleChessContent.cpp src/ExampleChessContent.h
+        src/LoopThread.cpp src/LoopThread.h
+        src/LampMoveThread.cpp src/LampMoveThread.h)
 
-    add_subdirectory(lib/glfw)
-    include_directories(lib/glfw/include)
-endif()
-
-add_executable(examples src/main.cpp src/ColorShader.h src/BlendShader.h src/constants.h)
-
-target_link_libraries(examples algine glfw pthread)
+target_link_libraries(examples algine pthread)
 
 if (WIN32)
     if (NOT ALGINE_LINK_LIBS_STATICALLY)
