@@ -20,47 +20,14 @@ add_executable(examples
         src/LoopThread.cpp src/LoopThread.h
         src/LampMoveThread.cpp src/LampMoveThread.h)
 
-target_link_libraries(examples algine pthread)
+if (NOT MSVC)
+    set(EXAMPLES_LINK_LIBS pthread)
+endif()
+
+target_link_libraries(examples algine ${EXAMPLES_LINK_LIBS})
 
 if (WIN32)
-    if (NOT ALGINE_LINK_LIBS_STATICALLY)
-        if (CMAKE_BUILD_TYPE MATCHES Debug)
-            set(libalgine libalgined.dll)
-            set(libassimp libassimpd.dll)
-            set(libtulz libtulzd.dll)
-            set(libglew glew32d.dll)
-            set(libglfw glfw3d.dll)
-        else() # if not Debug or Release CMake must throw an error in the very beginning
-            set(libalgine libalgine.dll)
-            set(libassimp libassimp.dll)
-            set(libtulz libtulz.dll)
-            set(libglew glew32.dll)
-            set(libglfw glfw3.dll)
-        endif()
-
-        add_custom_command(TARGET examples POST_BUILD
-                COMMENT "Creating symlinks to libs..."
-                # algine
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${CMAKE_CURRENT_BINARY_DIR}/lib/algine/${libalgine}
-                    ${CMAKE_CURRENT_BINARY_DIR}/${libalgine}
-                # assimp
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${CMAKE_CURRENT_BINARY_DIR}/lib/algine/contrib/assimp/code/${libassimp}
-                    ${CMAKE_CURRENT_BINARY_DIR}/${libassimp}
-                # tulz
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${CMAKE_CURRENT_BINARY_DIR}/lib/algine/contrib/tulz/${libtulz}
-                    ${CMAKE_CURRENT_BINARY_DIR}/${libtulz}
-                # glew
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${CMAKE_CURRENT_BINARY_DIR}/bin/${libglew}
-                    ${CMAKE_CURRENT_BINARY_DIR}/${libglew}
-                # glfw
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${CMAKE_CURRENT_BINARY_DIR}/lib/glfw/src/${libglfw}
-                    ${CMAKE_CURRENT_BINARY_DIR}/${libglfw})
-    endif()
+    algine_target_mklink_win(examples lib/algine)
 endif()
 
 add_executable(ProjectFilesGenerator src/ProjectFilesGenerator.cpp src/constants.h)
