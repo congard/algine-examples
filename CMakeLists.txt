@@ -3,15 +3,7 @@ project(algine_examples)
 
 set(CMAKE_CXX_STANDARD 17)
 
-if (NOT TARGET algine)
-    add_subdirectory(lib/algine)
-endif()
-
-include_directories(lib/algine/include)
-include_directories(lib/algine/contrib/tulz/include)
-include_directories(lib/algine/contrib/glm)
-include_directories(lib/algine/contrib/glew/include)
-include_directories(lib/algine/contrib)
+add_subdirectory(lib/algine)
 
 add_executable(examples
         src/Main.cpp
