@@ -63,6 +63,8 @@ void ExampleChessContent::init() {
     Engine::enableDepthMask();
     Engine::enableFaceCulling();
 
+    getWindow()->setEventHandler(this);
+
     lampThread.content = this;
     lampThread.startLoop();
 }
@@ -164,6 +166,10 @@ void ExampleChessContent::resize() {
 }
 
 void ExampleChessContent::pollKeys() {
+    auto isKeyPressed = [&](KeyboardKey key) {
+        return getWindow()->isKeyPressed(key);
+    };
+
     if (isKeyPressed(KeyboardKey::Escape))
         getWindow()->close();
 

@@ -1,6 +1,7 @@
 #ifndef ALGINE_EXAMPLES_EXAMPLECHESSCONTENT_H
 #define ALGINE_EXAMPLES_EXAMPLECHESSCONTENT_H
 
+#include <algine/core/window/WindowEventHandler.h>
 #include <algine/core/window/Content.h>
 
 #include <algine/std/model/ShapePtr.h>
@@ -23,7 +24,7 @@
 
 using namespace algine;
 
-class ExampleChessContent: public Content {
+class ExampleChessContent: public Content, public WindowEventHandler {
     friend class LampMoveThread;
 
 public:
