@@ -2,7 +2,8 @@
 #define ALGINE_EXAMPLES_EXAMPLECHESSCONTENT_H
 
 #include <algine/core/window/WindowEventHandler.h>
-#include <algine/core/window/Content.h>
+
+#include <algine/core/Content.h>
 
 #include <algine/std/model/ShapePtr.h>
 #include <algine/std/model/ModelPtr.h>
