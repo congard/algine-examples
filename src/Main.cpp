@@ -8,7 +8,6 @@ int main() {
     Engine::init();
 
     Window window("Algine", 1366, 768);
-    window.create();
     window.setFullscreenDimensions(1366, 768);
     window.setIcon(Icon("src/resources/icon64x64.png"));
     window.setMouseTracking(true);
