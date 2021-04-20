@@ -680,15 +680,14 @@ void ExampleChessContent::renderScene() {
     displayFb->setActiveOutputList(1);
     displayFb->update();
 
-    // TODO: Engine::DepthTest::LessOrEqual
-    Engine::setDepthTestMode(Engine::DepthTestLessOrEqual);
+    Engine::setDepthTestMode(Engine::DepthTest::LessOrEqual);
     skyboxShader->bind();
     skyboxShader->setMat3(CubemapShader::Vars::ViewMatrix, glm::mat3(camera.getViewMatrix()));
     skyboxShader->setMat4(CubemapShader::Vars::TransformationMatrix, camera.getProjectionMatrix() * glm::mat4(glm::mat3(camera.getViewMatrix())));
     skybox->use(0);
     skyboxRenderer->getInputLayout()->bind();
     skyboxRenderer->draw();
-    Engine::setDepthTestMode(Engine::DepthTestLess);
+    Engine::setDepthTestMode(Engine::DepthTest::Less);
 
     // postprocessing
     quadRenderer->getInputLayout()->bind();
