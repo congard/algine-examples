@@ -8,14 +8,14 @@
 
 #include <algine/core/Engine.h>
 #include <algine/core/window/Window.h>
-#include <algine/core/shader/ShaderManager.h>
-#include <algine/core/shader/ShaderProgramManager.h>
-#include <algine/core/texture/TextureCubeManager.h>
+#include <algine/core/shader/ShaderCreator.h>
+#include <algine/core/shader/ShaderProgramCreator.h>
+#include <algine/core/texture/TextureCubeCreator.h>
 #include <algine/core/PtrMaker.h>
 
 #include <algine/std/model/Shape.h>
 #include <algine/std/model/Model.h>
-#include <algine/std/model/ModelManager.h>
+#include <algine/std/model/ModelCreator.h>
 #include <algine/std/CubeRenderer.h>
 
 #include <algine/ext/constants/SSRShader.h>
@@ -268,15 +268,15 @@ void ExampleChessContent::createDirLamp(DirLamp &result, const glm::vec3 &pos, c
 void ExampleChessContent::initShaders() {
     cout << "Compiling algine shaders\n";
 
-    ShaderManager::setGlobalIncludePaths({
+    ShaderCreator::setGlobalIncludePaths({
         algineResources,
         resources "shaders"
     });
 
     auto programFromConfig = [](ShaderProgramPtr &program, const string &configName) {
-        ShaderProgramManager manager;
-        manager.importFromFile(resources "programs/" + configName + ".conf.json");
-        program = manager.create();
+        ShaderProgramCreator creator;
+        creator.importFromFile(resources "programs/" + configName + ".conf.json");
+        program = creator.create();
         program->loadActiveLocations();
     };
 
@@ -308,9 +308,9 @@ void ExampleChessContent::initShaders() {
     ssrValues->setFormat(Texture::RG16F);
     cocTex->setFormat(Texture::Red16F);
 
-    TextureCubeManager skyboxManager;
-    skyboxManager.importFromFile(resources "textures/skybox/Skybox.conf.json");
-    skybox = skyboxManager.create();
+    TextureCubeCreator skyboxCreator;
+    skyboxCreator.importFromFile(resources "textures/skybox/Skybox.conf.json");
+    skybox = skyboxCreator.create();
 
     Texture2D::setParamsMultiple(Texture2D::defaultParams(),
             colorTex.get(), normalTex.get(), ssrValues.get(), positionTex.get(),
@@ -437,10 +437,10 @@ void ExampleChessContent::initCamera() {
 void ExampleChessContent::createModels() {
     auto getModel = [](const string &path)
     {
-        ModelManager modelManager;
-        modelManager.importFromFile(modelsPath + path);
+        ModelCreator modelCreator;
+        modelCreator.importFromFile(modelsPath + path);
 
-        return modelManager.get();
+        return modelCreator.get();
     };
 
     models.emplace_back(getModel("chess/Classic Chess small.json"));
@@ -478,10 +478,10 @@ void ExampleChessContent::initLamps() {
     lightManager.init();
 
     // create models
-    ShapeManager manager;
-    manager.importFromFile(modelsPath "japanese_lamp/japanese_lamp.shape.json");
+    ShapeCreator creator;
+    creator.importFromFile(modelsPath "japanese_lamp/japanese_lamp.shape.json");
 
-    auto lampShape = manager.get();
+    auto lampShape = creator.get();
 
     lamps.resize(2); // TODO
     pointLamps.resize(1);
