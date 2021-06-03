@@ -14,7 +14,7 @@
 #include <algine/std/lighting/LightingManager.h>
 #include <algine/std/CubeRendererPtr.h>
 #include <algine/std/QuadRendererPtr.h>
-#include <algine/std/camera/Camera.h>
+#include <algine/std/Camera.h>
 #include <algine/std/rotator/EulerRotator.h>
 
 #include <algine/ext/Blur.h>
