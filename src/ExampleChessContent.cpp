@@ -588,8 +588,7 @@ void ExampleChessContent::drawModel(ModelPtr &model) {
     for (auto &mesh : shape->getMeshes()) {
         using namespace Module::Material::Vars;
 
-        auto useNotNull = [](const Texture2DPtr &tex, const uint slot)
-        {
+        auto useNotNull = [](const Texture2DPtr &tex, uint slot) {
             if (tex != nullptr) {
                 tex->use(slot);
             } else {
@@ -598,17 +597,17 @@ void ExampleChessContent::drawModel(ModelPtr &model) {
         };
 
         const auto &material = mesh.material;
-        useNotNull(material.ambientTexture, 0);
-        useNotNull(material.diffuseTexture, 1);
-        useNotNull(material.specularTexture, 2);
-        useNotNull(material.normalTexture, 3);
-        useNotNull(material.reflectionTexture, 4);
-        useNotNull(material.jitterTexture, 5);
+        useNotNull(material.getTexture2D(Material::AmbientTexture, nullptr), 0);
+        useNotNull(material.getTexture2D(Material::DiffuseTexture, nullptr), 1);
+        useNotNull(material.getTexture2D(Material::SpecularTexture, nullptr), 2);
+        useNotNull(material.getTexture2D(Material::NormalTexture, nullptr), 3);
+        useNotNull(material.getTexture2D(Material::ReflectionTexture, nullptr), 4);
+        useNotNull(material.getTexture2D(Material::JitterTexture, nullptr), 5);
 
-        colorShader->setFloat(AmbientStrength, mesh.material.ambientStrength);
-        colorShader->setFloat(DiffuseStrength, mesh.material.diffuseStrength);
-        colorShader->setFloat(SpecularStrength, mesh.material.specularStrength);
-        colorShader->setFloat(Shininess, mesh.material.shininess);
+        colorShader->setFloat(AmbientStrength, material.getFloat(Material::AmbientStrength, 0.01f));
+        colorShader->setFloat(DiffuseStrength, material.getFloat(Material::DiffuseStrength, 1.0f));
+        colorShader->setFloat(SpecularStrength, material.getFloat(Material::SpecularStrength, 1.0f));
+        colorShader->setFloat(Shininess, material.getFloat(Material::Shininess, 0.01f));
 
         Engine::drawElements(mesh.start, mesh.count);
     }
