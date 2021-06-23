@@ -18,7 +18,6 @@
 #include <algine/std/model/ModelCreator.h>
 #include <algine/std/CubeRenderer.h>
 
-#include <algine/ext/constants/SSRShader.h>
 #include <algine/ext/constants/BlendDOF.h>
 #include <algine/ext/constants/COCShader.h>
 
@@ -107,8 +106,8 @@ void ExampleChessContent::render() {
         renderToDepthMap(i);
 
     ssrShader->bind();
-    ssrShader->setMat4(SSRShader::Vars::ProjectionMatrix, camera.getProjectionMatrix());
-    ssrShader->setMat4(SSRShader::Vars::ViewMatrix, camera.getViewMatrix());
+    ssrShader->setMat4("projection", camera.getProjectionMatrix());
+    ssrShader->setMat4("view", camera.getViewMatrix());
 
     /* --- color rendering --- */
     renderScene();
@@ -409,9 +408,9 @@ void ExampleChessContent::initShaders() {
 
     // screen space setting
     ssrShader->bind();
-    ssrShader->setInt(SSRShader::Vars::NormalMap, 1);
-    ssrShader->setInt(SSRShader::Vars::SSRValuesMap, 2);
-    ssrShader->setInt(SSRShader::Vars::PositionMap, 3);
+    ssrShader->setInt("normalMap", 1);
+    ssrShader->setInt("ssrValuesMap", 2);
+    ssrShader->setInt("positionMap", 3);
     ssrShader->unbind();
 
     resize();

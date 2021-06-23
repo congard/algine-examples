@@ -4,7 +4,7 @@
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/shaders/SSR.frag.glsl",
+                "path": "../shaders/SSRFrag.glsl",
                 "type": "fragment"
             }
         },
