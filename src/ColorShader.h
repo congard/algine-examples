@@ -23,6 +23,17 @@ namespace ColorShader {
         constant(InTangent, "inTangent")
         constant(InBitangent, "inBitangent")
 
+        constant(AmbientTex, "ambient")
+        constant(DiffuseTex, "diffuse")
+        constant(SpecularTex, "specular")
+        constant(NormalTex, "normal")
+        constant(ReflectionStrengthTex, "reflectionStrength")
+        constant(JitterTex, "jitter")
+        constant(AmbientStrength, "ambientStrength")
+        constant(DiffuseStrength, "diffuseStrength")
+        constant(SpecularStrength, "specularStrength")
+        constant(Shininess, "shininess")
+
         constant(CameraPos, "cameraPos")
     }
 }

@@ -23,7 +23,6 @@
 
 #include <algine/constants/CubemapShader.h>
 #include <algine/constants/ShadowShader.h>
-#include <algine/constants/Material.h>
 
 #include <iostream>
 #include <cfloat>
@@ -384,12 +383,12 @@ void ExampleChessContent::initShaders() {
 
     // configuring CS
     colorShader->bind();
-    colorShader->setInt(Module::Material::Vars::AmbientTex, 0);
-    colorShader->setInt(Module::Material::Vars::DiffuseTex, 1);
-    colorShader->setInt(Module::Material::Vars::SpecularTex, 2);
-    colorShader->setInt(Module::Material::Vars::NormalTex, 3);
-    colorShader->setInt(Module::Material::Vars::ReflectionStrengthTex, 4);
-    colorShader->setInt(Module::Material::Vars::JitterTex, 5);
+    colorShader->setInt(ColorShader::Vars::AmbientTex, 0);
+    colorShader->setInt(ColorShader::Vars::DiffuseTex, 1);
+    colorShader->setInt(ColorShader::Vars::SpecularTex, 2);
+    colorShader->setInt(ColorShader::Vars::NormalTex, 3);
+    colorShader->setInt(ColorShader::Vars::ReflectionStrengthTex, 4);
+    colorShader->setInt(ColorShader::Vars::JitterTex, 5);
 
     // configuring CubemapShader
     skyboxShader->bind();
@@ -585,7 +584,7 @@ void ExampleChessContent::drawModel(ModelPtr &model) {
 	updateMatrices(model->transformation());
 
     for (auto &mesh : shape->getMeshes()) {
-        using namespace Module::Material::Vars;
+        using namespace ColorShader::Vars;
 
         auto useNotNull = [](const Texture2DPtr &tex, uint slot) {
             if (tex != nullptr) {
