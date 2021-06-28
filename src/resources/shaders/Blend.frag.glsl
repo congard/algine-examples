@@ -1,8 +1,7 @@
-#version 330
+#version 330 core
 
 #alp include <ToneMapping/exposure>
 #alp include <Blending/screen>
-#alp include "modules/BlendDOF.glsl"
 
 out vec3 fragColor;
 in vec2 texCoord;
@@ -10,15 +9,23 @@ in vec2 texCoord;
 uniform sampler2D bloom;
 uniform sampler2D dof;
 uniform sampler2D image;
+uniform sampler2D cocMap;
+uniform float dofSigmaDivider;
 uniform float exposure;
 uniform float gamma;
 
+vec3 blendDOF(vec3 base, vec3 dof) {
+    float k = texture(cocMap, texCoord).r / dofSigmaDivider;
+
+    if (k > 1.0f) {
+        return dof;
+    }
+
+    return mix(base, dof, k);
+}
+
 void main() {
-    vec3 color = blendDOF(
-        texture(image, texCoord).rgb,
-        texture(dof, texCoord).rgb,
-        texCoord
-    );
+    vec3 color = blendDOF(texture(image, texCoord).rgb, texture(dof, texCoord).rgb);
     
     color = blendScreen(texture(bloom, texCoord).rgb, color);
     

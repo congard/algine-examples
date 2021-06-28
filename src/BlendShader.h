@@ -3,14 +3,14 @@
 
 #define constant(name, val) constexpr char name[] = val;
 
-namespace BlendShader {
-    namespace Vars {
-        constant(BaseImage, "image")
-        constant(BloomImage, "bloom")
-        constant(DofImage, "dof")
-        constant(Exposure, "exposure")
-        constant(Gamma, "gamma")
-    }
+namespace BlendShader::Vars {
+constant(BaseImage, "image")
+constant(BloomImage, "bloom")
+constant(DofImage, "dof")
+constant(COCMap, "cocMap")
+constant(DofSigmaDivider, "dofSigmaDivider")
+constant(Exposure, "exposure")
+constant(Gamma, "gamma")
 }
 
 #undef constant

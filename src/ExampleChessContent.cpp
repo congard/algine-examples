@@ -18,8 +18,6 @@
 #include <algine/std/model/ModelCreator.h>
 #include <algine/std/CubeRenderer.h>
 
-#include <algine/ext/constants/BlendDOF.h>
-
 #include <algine/constants/CubemapShader.h>
 #include <algine/constants/ShadowShader.h>
 
@@ -399,8 +397,8 @@ void ExampleChessContent::initShaders() {
     blendShader->setInt(BlendShader::Vars::BaseImage, 0); // GL_TEXTURE0
     blendShader->setInt(BlendShader::Vars::BloomImage, 1); // GL_TEXTURE1
     blendShader->setInt(BlendShader::Vars::DofImage, 2); // GL_TEXTURE2
-    blendShader->setInt(Module::BlendDOF::Vars::COCMap, 3); // GL_TEXTURE3
-    blendShader->setFloat(Module::BlendDOF::Vars::DOFSigmaDivider, dofSigmaDivider);
+    blendShader->setInt(BlendShader::Vars::COCMap, 3); // GL_TEXTURE3
+    blendShader->setFloat(BlendShader::Vars::DofSigmaDivider, dofSigmaDivider);
     blendShader->setFloat(BlendShader::Vars::Exposure, blendExposure);
     blendShader->setFloat(BlendShader::Vars::Gamma, blendGamma);
 
