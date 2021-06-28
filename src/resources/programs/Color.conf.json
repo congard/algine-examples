@@ -7,27 +7,18 @@
         "MAX_DIR_LIGHTS_COUNT": "4",
         "MAX_POINT_LIGHTS_COUNT": "4"
     },
-    "params": [
-        "ALGINE_ATTENUATION_MODE_ENABLED",
-        "ALGINE_SHADOW_MAPPING_MODE_ENABLED",
-        "ALGINE_NORMAL_MAPPING_FROM_MAP",
-        "ALGINE_LIGHTING_MODE_ENABLED",
-        "ALGINE_TEXTURE_MAPPING_MODE_ENABLED",
-        "ALGINE_SSR_MODE_ENABLED",
-        "ALGINE_BONE_SYSTEM"
-    ],
     "shaders": [
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/templates/ColorShader/vertex.glsl",
+                "path": "../shaders/ColorShader/vertex.glsl",
                 "type": "vertex"
             }
         },
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/templates/ColorShader/fragment.glsl",
+                "path": "../shaders/ColorShader/fragment.glsl",
                 "type": "fragment"
             }
         }

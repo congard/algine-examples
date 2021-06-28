@@ -1,13 +1,10 @@
 {
     "access": "private",
-    "params": [
-        "ALGINE_BLOOM_TYPE_ADD"
-    ],
     "shaders": [
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/templates/Blend.frag.glsl",
+                "path": "../shaders/Blend.frag.glsl",
                 "type": "fragment"
             }
         },
