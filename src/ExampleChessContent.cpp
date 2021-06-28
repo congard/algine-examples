@@ -19,7 +19,6 @@
 #include <algine/std/CubeRenderer.h>
 
 #include <algine/ext/constants/BlendDOF.h>
-#include <algine/ext/constants/COCShader.h>
 
 #include <algine/constants/CubemapShader.h>
 #include <algine/constants/ShadowShader.h>
@@ -135,7 +134,7 @@ void ExampleChessContent::mouseClick(MouseKey key) {
     cout << "Position map: x: " << pixels[0] << "; y: " << pixels[1] << "; z: " << pixels[2] << "\n";
 
     dofCoCShader->bind();
-    dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
+    dofCoCShader->setFloat("planeInFocus", pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
     dofCoCShader->unbind();
 }
 
@@ -526,9 +525,9 @@ void ExampleChessContent::initShadowMaps() {
 
 void ExampleChessContent::initDOF() {
     dofCoCShader->bind();
-    dofCoCShader->setFloat(COCShader::Vars::Cinematic::Aperture, dofAperture);
-    dofCoCShader->setFloat(COCShader::Vars::Cinematic::ImageDistance, dofImageDistance);
-    dofCoCShader->setFloat(COCShader::Vars::Cinematic::PlaneInFocus, -1.0f);
+    dofCoCShader->setFloat("aperture", dofAperture);
+    dofCoCShader->setFloat("imageDistance", dofImageDistance);
+    dofCoCShader->setFloat("planeInFocus", -1.0f);
     dofCoCShader->unbind();
 }
 

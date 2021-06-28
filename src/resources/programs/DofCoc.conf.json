@@ -1,13 +1,10 @@
 {
     "access": "private",
-    "params": [
-        "ALGINE_CINEMATIC_DOF"
-    ],
     "shaders": [
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/shaders/DOFCOC.frag.glsl",
+                "path": "../shaders/DOFCOC.frag.glsl",
                 "type": "fragment"
             }
         },
