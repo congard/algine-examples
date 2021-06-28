@@ -463,12 +463,10 @@ void ExampleChessContent::createModels() {
 
 void ExampleChessContent::initLamps() {
     // configure LightingManager
-    lightManager.setLightsLimit(dirLightsLimit, Light::Type::Dir);
-    lightManager.setLightsLimit(pointLightsLimit, Light::Type::Point);
-    lightManager.setLightsMapInitialSlot(6, Light::Type::Point);
-    lightManager.setLightsMapInitialSlot(
-            lightManager.getLightsMapInitialSlot(Light::Type::Point) + lightManager.getLightsLimit(Light::Type::Point),
-            Light::Type::Dir);
+    lightManager.setDirLightsLimit(dirLightsLimit);
+    lightManager.setPointLightsLimit(pointLightsLimit);
+    lightManager.setDirMapInitialSlot(6);
+    lightManager.setPointMapInitialSlot(lightManager.getDirMapInitialSlot() + lightManager.getDirLightsLimit());
 
     lightManager.setLightShader(colorShader);
     lightManager.setPointLightShadowShader(pointShadowShader);
@@ -536,7 +534,6 @@ void ExampleChessContent::initDOF() {
 
 void ExampleChessContent::sendLampsData() {
     lightManager.bindBuffer();
-    colorShader->setVec3(ColorShader::Vars::CameraPos, camera.getPos());
 
     for (size_t i = 0; i < pointLamps.size(); i++)
         lightManager.writePos(pointLamps[i], i);

@@ -9,14 +9,14 @@
 #include <algine/std/model/ModelPtr.h>
 #include <algine/std/animation/AnimationBlender.h>
 #include <algine/std/animation/BoneSystemManager.h>
-#include <algine/std/lighting/PointLamp.h>
-#include <algine/std/lighting/DirLamp.h>
-#include <algine/std/lighting/LightingManager.h>
 #include <algine/std/CubeRendererPtr.h>
 #include <algine/std/QuadRendererPtr.h>
 #include <algine/std/Camera.h>
 #include <algine/std/rotator/EulerRotator.h>
 
+#include <algine/ext/lighting/PointLamp.h>
+#include <algine/ext/lighting/DirLamp.h>
+#include <algine/ext/lighting/LightingManager.h>
 #include <algine/ext/Blur.h>
 
 #include <vector>
