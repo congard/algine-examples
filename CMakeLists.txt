@@ -21,7 +21,3 @@ target_link_libraries(examples algine ${EXAMPLES_LINK_LIBS})
 if (WIN32)
     algine_target_mklink_win(examples lib/algine)
 endif()
-
-add_executable(ProjectFilesGenerator src/ProjectFilesGenerator.cpp src/constants.h)
-
-target_link_libraries(ProjectFilesGenerator algine)
