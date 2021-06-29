@@ -8,6 +8,6 @@
     "params": [
         "ALGINE_BONE_SYSTEM"
     ],
-    "path": "../../../lib/algine/resources/shaders/Shadow.vert.glsl",
+    "path": "@algine/Shadow.vs.glsl",
     "type": "vertex"
 }

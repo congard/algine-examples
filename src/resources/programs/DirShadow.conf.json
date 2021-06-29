@@ -7,7 +7,7 @@
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/shaders/Shadow.frag.glsl",
+                "path": "@algine/Shadow.fs.glsl",
                 "type": "fragment"
             }
         },

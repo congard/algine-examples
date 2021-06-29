@@ -12,7 +12,7 @@
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/shaders/Blur.frag.glsl",
+                "path": "@algine/Blur.fs.glsl",
                 "type": "fragment"
             }
         },

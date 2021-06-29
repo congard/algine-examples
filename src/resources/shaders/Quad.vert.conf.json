@@ -1,6 +1,6 @@
 {
     "access": "public",
     "name": "QuadVertexShader",
-    "path": "../../../lib/algine/resources/shaders/basic/Quad.vert.glsl",
+    "path": "@algine/Quad.vs.glsl",
     "type": "vertex"
 }
