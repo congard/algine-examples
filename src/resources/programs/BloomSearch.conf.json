@@ -4,7 +4,7 @@
         {
             "dump": {
                 "access": "private",
-                "path": "../../../lib/algine/resources/shaders/BloomSearch.frag.glsl",
+                "path": "../shaders/BloomSearch.frag.glsl",
                 "type": "fragment"
             }
         },

@@ -17,7 +17,7 @@
 #include <algine/ext/lighting/PointLamp.h>
 #include <algine/ext/lighting/DirLamp.h>
 #include <algine/ext/lighting/LightingManager.h>
-#include <algine/ext/Blur.h>
+#include <algine/std/Blur.h>
 
 #include <vector>
 
