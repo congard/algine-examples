@@ -280,12 +280,6 @@ void ExampleChessContent::initShaders() {
     programFromConfig(dirShadowShader, "DirShadow");
     programFromConfig(dofCoCShader, "DofCoc");
     programFromConfig(blendShader, "Blend");
-    programFromConfig(bloomBlurHorShader, "BloomBlur.hor");
-    programFromConfig(bloomBlurVertShader, "BloomBlur.ver");
-    programFromConfig(dofBlurHorShader, "DofBlur.hor");
-    programFromConfig(dofBlurVertShader, "DofBlur.ver");
-    programFromConfig(cocBlurHorShader, "CocBlur.hor");
-    programFromConfig(cocBlurVertShader, "CocBlur.ver");
     programFromConfig(skyboxShader, "Skybox");
     programFromConfig(ssrShader, "SSR");
     programFromConfig(bloomSearchShader, "BloomSearch");
@@ -318,7 +312,7 @@ void ExampleChessContent::initShaders() {
     createInfo.params = Texture2D::defaultParams();
 
     bloomBlur = PtrMaker::make<Blur>(createInfo);
-    bloomBlur->setPingPongShaders(bloomBlurHorShader, bloomBlurVertShader);
+    bloomBlur->setPingPongShaders(Blur::getPingPongShaders(bloomBlurKernelRadius, "rgb"));
     bloomBlur->setQuadRenderer(quadRenderer);
     bloomBlur->configureKernel(bloomBlurKernelRadius, bloomBlurKernelSigma);
 
@@ -327,14 +321,14 @@ void ExampleChessContent::initShaders() {
     createInfo.height = height() * dofK;
 
     cocBlur = PtrMaker::make<Blur>(createInfo);
-    cocBlur->setPingPongShaders(cocBlurHorShader, cocBlurVertShader);
+    cocBlur->setPingPongShaders(Blur::getPingPongShaders(cocBlurKernelRadius, "r"));
     cocBlur->setQuadRenderer(quadRenderer);
     cocBlur->configureKernel(cocBlurKernelRadius, cocBlurKernelSigma);
 
     createInfo.format = Texture::RGB16F;
 
     dofBlur = PtrMaker::make<Blur>(createInfo);
-    dofBlur->setPingPongShaders(dofBlurHorShader, dofBlurVertShader);
+    dofBlur->setPingPongShaders(Blur::getPingPongShaders(dofBlurKernelRadius, "rgb"));
     dofBlur->setQuadRenderer(quadRenderer);
     dofBlur->configureKernel(dofBlurKernelRadius, dofBlurKernelSigma);
 

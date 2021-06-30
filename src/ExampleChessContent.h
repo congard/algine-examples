@@ -111,12 +111,9 @@ private:
     ShaderProgramPtr colorShader;
     ShaderProgramPtr pointShadowShader;
     ShaderProgramPtr dirShadowShader;
-    ShaderProgramPtr dofBlurHorShader, dofBlurVertShader;
     ShaderProgramPtr dofCoCShader;
     ShaderProgramPtr ssrShader;
     ShaderProgramPtr bloomSearchShader;
-    ShaderProgramPtr bloomBlurHorShader, bloomBlurVertShader;
-    ShaderProgramPtr cocBlurHorShader, cocBlurVertShader;
     ShaderProgramPtr blendShader;
 
 private:
