@@ -1,5 +1,3 @@
-#define GLM_FORCE_CTOR_INIT
-
 #include "ExampleChessContent.h"
 
 #include "constants.h" // TODO move dof

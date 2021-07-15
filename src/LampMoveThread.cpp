@@ -1,5 +1,3 @@
-#define GLM_FORCE_CTOR_INIT
-
 #include "LampMoveThread.h"
 
 #include "ExampleChessContent.h"
@@ -13,10 +11,8 @@
 using namespace std;
 
 LampMoveThread::LampMoveThread()
-    : content(nullptr)
-{
-    rotate = glm::mat3(glm::rotate(glm::mat4(), glm::radians(0.01f), glm::vec3(0, 1, 0)));
-}
+    : content(nullptr),
+      rotate(glm::rotate(glm::mat4(1.0f), glm::radians(0.01f), glm::vec3(0, 1, 0))) {}
 
 void LampMoveThread::execute() {
     this_thread::sleep_for(chrono::milliseconds(1));
