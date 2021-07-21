@@ -123,15 +123,15 @@ void ExampleChessContent::mouseClick(MouseKey key) {
     if (key != MouseKey::Left)
         return;
 
-    displayFb->bind();
-    auto pixels = displayFb->getPixels2D(Framebuffer::ColorAttachmentZero + 2, width() / 2, height() / 2, 1, 1).pixels;
-    displayFb->unbind();
+    float pixel[3];
 
-    cout << "Position map: x: " << pixels[0] << "; y: " << pixels[1] << "; z: " << pixels[2] << "\n";
+    displayFb->bind();
+    displayFb->readPixels(Framebuffer::ColorAttachmentZero + 2, width() / 2, height() / 2, 1, 1, Texture::RGB, DataType::Float, pixel);
+
+    cout << "Position map: x: " << pixel[0] << "; y: " << pixel[1] << "; z: " << pixel[2] << "\n";
 
     dofCoCShader->bind();
-    dofCoCShader->setFloat("planeInFocus", pixels[2] == 0 ? FLT_EPSILON : pixels[2]);
-    dofCoCShader->unbind();
+    dofCoCShader->setFloat("planeInFocus", pixel[2] == 0 ? FLT_EPSILON : pixel[2]);
 }
 
 void ExampleChessContent::keyboardKeyPress(KeyboardKey key) {
