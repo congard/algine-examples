@@ -35,12 +35,12 @@ public:
 
     void render() override;
 
-    void mouseMove(double x, double y) override;
-    void mouseClick(MouseKey key) override;
+    void mouseMove(double x, double y, Window &window) override;
+    void mouseClick(MouseKey key, Window &window) override;
 
-    void keyboardKeyPress(KeyboardKey key) override;
+    void keyboardKeyPress(KeyboardKey key, Window &window) override;
 
-    void windowSizeChange(int width, int height) override;
+    void windowSizeChange(int width, int height, Window &window) override;
 
 private:
     void resize();

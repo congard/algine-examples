@@ -107,7 +107,7 @@ void ExampleChessContent::render() {
     renderScene();
 }
 
-void ExampleChessContent::mouseMove(double x, double y) {
+void ExampleChessContent::mouseMove(double x, double y, Window &window) {
     glm::vec2 mousePos = {x, y};
 
     constant k = 0.0025f;
@@ -119,7 +119,7 @@ void ExampleChessContent::mouseMove(double x, double y) {
     lastMousePos = mousePos;
 }
 
-void ExampleChessContent::mouseClick(MouseKey key) {
+void ExampleChessContent::mouseClick(MouseKey key, Window &window) {
     if (key != MouseKey::Left)
         return;
 
@@ -134,13 +134,13 @@ void ExampleChessContent::mouseClick(MouseKey key) {
     dofCoCShader->setFloat("planeInFocus", pixel[2] == 0 ? FLT_EPSILON : pixel[2]);
 }
 
-void ExampleChessContent::keyboardKeyPress(KeyboardKey key) {
+void ExampleChessContent::keyboardKeyPress(KeyboardKey key, Window &window) {
     if (key == KeyboardKey::F) {
         getWindow()->setFullscreen(!getWindow()->isFullscreen());
     }
 }
 
-void ExampleChessContent::windowSizeChange(int, int) {
+void ExampleChessContent::windowSizeChange(int, int, Window&) {
     resize();
 
     camera.setAspectRatio((float) width() / height());
