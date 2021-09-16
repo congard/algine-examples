@@ -12,5 +12,7 @@ void main() {
 
     if (luminance(color) > brightnessThreshold) {
         fragColor = color;
+    } else {
+        discard;
     }
 }

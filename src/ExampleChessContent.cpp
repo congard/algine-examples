@@ -685,6 +685,7 @@ void ExampleChessContent::renderScene() {
 
     Engine::setViewport(width() * bloomK, height() * bloomK);
     bloomSearchFb->bind();
+    bloomSearchFb->clearColorBuffer();
     bloomSearchShader->bind();
     screenspaceTex->use(0);
     quadRenderer->draw();
